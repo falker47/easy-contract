@@ -5,13 +5,34 @@ import re
 from datetime import datetime
 
 # --- A. Configurazione e Segreti ---
-def get_api_key():
-    """Recupera la API Key da st.secrets o os.getenv."""
+def get_api_keys():
+    """
+    Recupera una lista di API Keys da st.secrets o os.getenv.
+    """
+    keys = []
+    
+    # 1. Lista esplicita in secrets
+    if "GEMINI_API_KEYS" in st.secrets:
+        val = st.secrets["GEMINI_API_KEYS"]
+        if isinstance(val, list):
+            keys.extend(val)
+        elif isinstance(val, str):
+            keys.append(val)
+            
+    # 2. Chiave singola legacy
     if "GEMINI_API_KEY" in st.secrets:
-        return st.secrets["GEMINI_API_KEY"]
-    return os.getenv("GEMINI_API_KEY")
+        val = st.secrets["GEMINI_API_KEY"]
+        if val not in keys:
+            keys.append(val)
+            
+    # 3. Env var
+    env_key = os.getenv("GEMINI_API_KEY")
+    if env_key and env_key not in keys:
+        keys.append(env_key)
 
-api_key = get_api_key()
+    return keys
+
+api_keys = get_api_keys()
 
 # --- B. Interfaccia Utente (UI) ---
 st.set_page_config(page_title="Easy Contract", page_icon="📝", layout="centered")
@@ -20,9 +41,17 @@ st.set_page_config(page_title="Easy Contract", page_icon="📝", layout="centere
 st.markdown("""
 <style>
     /* Nasconde il footer standard di Streamlit e l'header */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    #MainMenu {visibility: hidden !important;}
+    footer {visibility: hidden !important;}
+    header {visibility: hidden !important;}
+    
+    /* Nasconde la toolbar superiore (crown, user pic, menu) */
+    [data-testid="stToolbar"] {visibility: hidden !important;}
+    
+    /* Nasconde eventuali decorazioni o bottoni deploy */
+    .stDeployButton {display:none !important;}
+    [data-testid="stDecoration"] {display:none !important;}
+    [data-testid="stStatusWidget"] {visibility: hidden !important;}
     
     /* Stile personalizzato per il bottone */
     .stButton > button {
@@ -50,7 +79,7 @@ st.markdown("""
         background-color: #0E1117; 
         color: #FAFAFA;
         text-align: center;
-        padding: 10px;
+        padding: 7px;
         font-size: 14px;
         border-top: 1px solid #262730;
         z-index: 1000;
@@ -67,14 +96,13 @@ st.markdown("""
     
     /* Riduce margini del contenuto principale */
     .block-container {
-        padding-top: 2rem !important;
+        padding-top: 0.5rem !important;
         padding-bottom: 80px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Intestazione compatta
-st.markdown("## Easy Contract 📝\n**L'IA che ti protegge dalle insidie contrattuali**")
+# Intestazione spostata nelle singole view
 
 # ... (rest of the file remains unchanged until footer section)
 
@@ -87,20 +115,20 @@ footer_html = f"""
 """
 st.markdown(footer_html, unsafe_allow_html=True)
 
-with st.sidebar:
-    st.markdown("### 🔍 Come funziona")
-    st.markdown("""
-    1. **Carica** il contratto in PDF.
-    2. **Analizza** il documento con l'IA.
-    3. **Ottieni** un report su rischi e sicurezza.
-    """)
-    st.info("I dati vengono analizzati al volo e non vengono salvati.")
+# Sidebar rimossa su richiesta utente
+# with st.sidebar:
+#     st.markdown("### 🔍 Come funziona")
+#     st.markdown("""
+#     1. **Carica** il contratto in PDF.
+#     2. **Analizza** il documento con l'IA.
+#     3. **Ottieni** un report su rischi e sicurezza.
+#     """)
+#     st.info("I dati vengono analizzati al volo e non vengono salvati.")
 
-if not api_key:
-    st.warning("⚠️ **Attenzione:** API Key mancante. Inserisci `GEMINI_API_KEY` in `.streamlit/secrets.toml` o nelle variabili d'ambiente.")
+if not api_keys:
+    st.warning("⚠️ **Attenzione:** API Key mancante. Inserisci `GEMINI_API_KEYS` (lista) o `GEMINI_API_KEY` in `.streamlit/secrets.toml`.")
     st.stop()
 
-genai.configure(api_key=api_key)
 
 # --- Session State Init ---
 if "show_results" not in st.session_state:
@@ -120,25 +148,49 @@ def reset_app():
 
 if st.session_state["show_results"]:
     # --- RISULTATI ---
+    st.markdown("### 📝 Risultati Analisi")
     
-    # Bottone Indietro (in alto o in fondo? Mettiamolo in alto per navigabilità o usiamo colonne)
-    # L'utente ha chiesto un bottone per tornare.
+    # Layout: Score a sinistra, Bottone Chiudi a destra
+    col_score, col_close = st.columns([4, 1])
     
-    if st.session_state["score_val"]:
-        st.metric(label="🛡️ Livello di Sicurezza", value=f"{st.session_state['score_val']}/10")
+    with col_score:
+        if st.session_state["score_val"]:
+            st.metric(label="🛡️ Score", value=f"{st.session_state['score_val']}/10")
+            
+    with col_close:
+        # Bottone minimal "X"
+        if st.button("✕", help="Chiudi e analizza un altro"):
+            reset_app()
     
     st.markdown("---")
     st.markdown(st.session_state["analysis_text"])
     
     st.markdown("---")
-    if st.button("⬅️ Analizza un altro contratto"):
-        reset_app()
 
 else:
     # --- UPLOAD PAGE ---
     
-    # Rimosso header "Carica il documento" per compattezza
-    uploaded_file = st.file_uploader("Trascina qui il tuo contratto (PDF)", type=["pdf"])
+    # Hero Section Centrata
+    st.markdown("<h2 style='text-align: center; margin-bottom: 0px;'>Easy Contract 📝</h2>", unsafe_allow_html=True)
+    st.markdown("<h5 style='text-align: center; font-weight:normal; color: #a3a8b8; margin-top: 5px;'>L'AI che ti protegge dalle insidie contrattuali</h5>", unsafe_allow_html=True)
+    
+    st.write("") # Spacer
+
+    # Features 3 colonne
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown("<div style='text-align: center; padding: 10px; background-color: #262730; border-radius: 10px;'>⚡<br><b>Analisi Rapida</b></div>", unsafe_allow_html=True)
+    with c2:
+        st.markdown("<div style='text-align: center; padding: 10px; background-color: #262730; border-radius: 10px;'>🛡️<br><b>Privacy Sicura</b></div>", unsafe_allow_html=True)
+    with c3:
+        st.markdown("<div style='text-align: center; padding: 10px; background-color: #262730; border-radius: 10px;'>⚖️<br><b>Consigli Smart</b></div>", unsafe_allow_html=True)
+    
+    st.write("") # Spacer
+    st.write("") # Spacer
+
+    # Upload Area
+    st.markdown("##### 📂 Carica il tuo contratto")
+    uploaded_file = st.file_uploader("Seleziona il file PDF", type=["pdf"], label_visibility="collapsed")
 
     # --- C. Logica di Analisi ---
     if uploaded_file is not None:
@@ -178,29 +230,64 @@ IMPORTANTE: Per le sezioni "In Breve" e "Il Consiglio", vai SEMPRE a capo dopo i
 (Vai a Capo. Una sola frase diretta e operativa. Esempi: "Firma pure, ma verifica prima le spese condominiali reali con l'amministratore", "Firma solo se sei sicuro di mantenere il servizio per 2 anni", "Chiedi di rimuovere la clausola di non concorrenza post-contrattuale").
 """
 
-                    model = genai.GenerativeModel("gemini-2.5-flash")
-                    response = model.generate_content([system_prompt, document_blob])
-                    text = response.text
+                    # LOGICA DI ROTAZIONE CHIAVI
+                    response = None
+                    last_exception = None
                     
-                    # --- Smart Rendering & Saving ---
-                    score_match = re.search(r"(\d{1,2})/10", text)
-                    if score_match:
-                        score_val = score_match.group(1)
-                        st.session_state["score_val"] = score_val
+                    for i, key in enumerate(api_keys):
+                        try:
+                            # Configura con la chiave corrente
+                            genai.configure(api_key=key)
+                            model = genai.GenerativeModel("gemini-2.5-flash")
+                            
+                            # Tenta la generazione
+                            response = model.generate_content([system_prompt, document_blob])
+                            
+                            # Se arriva qui, successo! Esci dal loop
+                            break
+                        except Exception as e:
+                            last_exception = e
+                            error_msg = str(e)
+                            
+                            # Se è un errore di quota (429), prova la prossima chiave
+                            if "429" in error_msg:
+                                # Se non è l'ultima chiave, continua
+                                if i < len(api_keys) - 1:
+                                    continue
+                            
+                            # Se è un altro errore o sono finite le chiavi, lancia l'eccezione
+                            raise e
+
+                    if response:
+                        text = response.text
                         
-                        # Rimuovi la sezione Security dal testo
-                        split_marker = "💡 In Breve"
-                        if split_marker in text:
-                            text = split_marker + text.split(split_marker, 1)[1]
-                    else:
-                         st.session_state["score_val"] = None
-                    
-                    st.session_state["analysis_text"] = text
-                    st.session_state["show_results"] = True
-                    st.rerun()
+                        # --- Smart Rendering & Saving ---
+                        score_match = re.search(r"(\d{1,2})/10", text)
+                        if score_match:
+                            score_val = score_match.group(1)
+                            st.session_state["score_val"] = score_val
+                            
+                            # Rimuovi la sezione Security dal testo
+                            split_marker = "💡 In Breve"
+                            if split_marker in text:
+                                text = split_marker + text.split(split_marker, 1)[1]
+                        else:
+                             st.session_state["score_val"] = None
+                        
+                        st.session_state["analysis_text"] = text
+                        st.session_state["show_results"] = True
+                        st.rerun()
 
                 except Exception as e:
-                    st.error(f"Si è verificato un errore durante l'analisi: {e}")
+                    error_msg = str(e)
+                    if "429" in error_msg:
+                        st.error("📉 **Quota Giornaliera Esaurita (su tutte le chiavi)**")
+                        with st.expander("Dettagli errore"):
+                            st.code(error_msg)
+                    else:
+                        st.error("🚫 Si è verificato un errore imprevisto.")
+                        with st.expander("Mostra dettagli errore"):
+                            st.write(error_msg)
 
 # --- Footer ---
 current_year = datetime.now().year
