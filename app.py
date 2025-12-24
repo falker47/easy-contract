@@ -191,13 +191,20 @@ else:
     st.write("") # Spacer
 
     # Features 3 colonne
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown("<div style='text-align: center; padding: 10px; background-color: #262730; border-radius: 10px; color: #b1edfc;'>⚡<br><b>Analisi Rapida</b></div>", unsafe_allow_html=True)
-    with c2:
-        st.markdown("<div style='text-align: center; padding: 10px; background-color: #262730; border-radius: 10px; color: #b1edfc;'>🛡️<br><b>Privacy Sicura</b></div>", unsafe_allow_html=True)
-    with c3:
-        st.markdown("<div style='text-align: center; padding: 10px; background-color: #262730; border-radius: 10px; color: #b1edfc;'>⚖️<br><b>Consigli Smart</b></div>", unsafe_allow_html=True)
+    # Features (Layout orizzontale forzato anche su mobile tramite Flexbox)
+    st.markdown("""
+    <div style="display: flex; flex-direction: row; justify-content: space-between; gap: 10px;">
+        <div style="flex: 1; text-align: center; padding: 10px; background-color: #262730; border-radius: 10px; color: #b1edfc;">
+            ⚡<br><b>Analisi Rapida</b>
+        </div>
+        <div style="flex: 1; text-align: center; padding: 10px; background-color: #262730; border-radius: 10px; color: #b1edfc;">
+            🛡️<br><b>Privacy Sicura</b>
+        </div>
+        <div style="flex: 1; text-align: center; padding: 10px; background-color: #262730; border-radius: 10px; color: #b1edfc;">
+            ⚖️<br><b>Consigli Smart</b>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
     st.write("") # Spacer
     st.write("") # Spacer
