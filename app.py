@@ -35,7 +35,7 @@ def get_api_keys():
 api_keys = get_api_keys()
 
 # --- B. Interfaccia Utente (UI) ---
-st.set_page_config(page_title="Easy Contract", page_icon="📝", layout="centered")
+st.set_page_config(page_title="Easy Contract", page_icon="assets/easycontract.ico", layout="centered")
 
 # Custom CSS
 st.markdown("""
@@ -52,6 +52,12 @@ st.markdown("""
     .stDeployButton {display:none !important;}
     [data-testid="stDecoration"] {display:none !important;}
     [data-testid="stStatusWidget"] {visibility: hidden !important;}
+    
+    /* Nasconde elementi in basso a destra (Manage app, viewer badge) */
+    .viewerBadge_container__1QSob {display: none !important;}
+    
+    /* Nasconde specifici elementi di gestione cloud */
+    [data-testid="manage-app-button"] {display: none !important;}
     
     /* Stile personalizzato per il bottone */
     .stButton > button {
@@ -98,6 +104,14 @@ st.markdown("""
     .block-container {
         padding-top: 0.5rem !important;
         padding-bottom: 80px;
+    }
+    
+    /* Colore personalizzato richiesto per Titoli h2 e testo risposta */
+    h2 {
+        color: #b1edfc !important;
+    }
+    div[data-testid="stMarkdownContainer"] p, div[data-testid="stMarkdownContainer"] li {
+        color: #b1edfc !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -179,11 +193,11 @@ else:
     # Features 3 colonne
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown("<div style='text-align: center; padding: 10px; background-color: #262730; border-radius: 10px;'>⚡<br><b>Analisi Rapida</b></div>", unsafe_allow_html=True)
+        st.markdown("<div style='text-align: center; padding: 10px; background-color: #262730; border-radius: 10px; color: #b1edfc;'>⚡<br><b>Analisi Rapida</b></div>", unsafe_allow_html=True)
     with c2:
-        st.markdown("<div style='text-align: center; padding: 10px; background-color: #262730; border-radius: 10px;'>🛡️<br><b>Privacy Sicura</b></div>", unsafe_allow_html=True)
+        st.markdown("<div style='text-align: center; padding: 10px; background-color: #262730; border-radius: 10px; color: #b1edfc;'>🛡️<br><b>Privacy Sicura</b></div>", unsafe_allow_html=True)
     with c3:
-        st.markdown("<div style='text-align: center; padding: 10px; background-color: #262730; border-radius: 10px;'>⚖️<br><b>Consigli Smart</b></div>", unsafe_allow_html=True)
+        st.markdown("<div style='text-align: center; padding: 10px; background-color: #262730; border-radius: 10px; color: #b1edfc;'>⚖️<br><b>Consigli Smart</b></div>", unsafe_allow_html=True)
     
     st.write("") # Spacer
     st.write("") # Spacer
