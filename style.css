@@ -311,6 +311,19 @@ h3 {
 /* Responsive */
 @media (max-width: 600px) {
   .features-grid {
-    grid-template-columns: 1fr; /* Stack vertically on mobile */
+    grid-template-columns: repeat(3, 1fr); /* Horizontal layout */
+    gap: 0.5rem;
+  }
+  
+  .feature-card {
+    padding: 0.5rem;
+  }
+  
+  .feature-card .icon {
+    font-size: 1.2rem;
+  }
+  
+  .feature-card h3 {
+    font-size: 0.75rem;
   }
 }

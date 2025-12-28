@@ -1,7 +1,5 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-
 exports.handler = async (event, context) => {
   // Only allow POST
   if (event.httpMethod !== "POST") {

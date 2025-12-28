@@ -39,6 +39,15 @@ dropZone.addEventListener('drop', (e) => {
 function handleFileSelect() {
     const file = fileInput.files[0];
     if (file && file.type === "application/pdf") {
+        // Netlify Functions have a 6MB payload limit (Base64 increases size by ~33%).
+        // So we limit file to ~4MB to be safe.
+        const maxSize = 4 * 1024 * 1024; // 4MB
+        if (file.size > maxSize) {
+            alert("⚠️ Il file è troppo grande! Per questo server gratuito, il limite è 4MB.");
+            resetFile();
+            return;
+        }
+
         fileNameSpan.textContent = file.name;
         fileInfo.classList.remove('hidden');
         analyzeBtn.disabled = false;
