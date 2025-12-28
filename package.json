@@ -1,0 +1,8 @@
+{
+  "name": "easy-contract-serverless",
+  "version": "1.0.0",
+  "description": "Serverless backend for Easy Contract",
+  "dependencies": {
+    "@google/generative-ai": "^0.1.3"
+  }
+}

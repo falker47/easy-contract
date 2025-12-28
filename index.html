@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Easy Contract - AI Legal Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+  </head>
+  <body>
+    <main class="container">
+      <!-- Hero Section -->
+      <section class="hero">
+        <h1 class="gradient-text">Easy Contract 📝</h1>
+        <p class="subtitle">L'AI che ti protegge dalle insidie contrattuali</p>
+      </section>
+
+      <!-- Features Grid -->
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="icon">⚡</div>
+          <h3>Analisi Rapida</h3>
+        </div>
+        <div class="feature-card">
+          <div class="icon">🛡️</div>
+          <h3>Privacy Sicura</h3>
+        </div>
+        <div class="feature-card">
+          <div class="icon">⚖️</div>
+          <h3>Consigli Smart</h3>
+        </div>
+      </div>
+
+      <!-- Upload Section -->
+      <section class="upload-section" id="uploadSection">
+        <div class="file-drop-area" id="dropZone">
+          <span class="fake-btn">Scegli File PDF</span>
+          <span class="file-msg">o trascina qui</span>
+          <input
+            class="file-input"
+            type="file"
+            id="fileInput"
+            accept="application/pdf"
+          />
+        </div>
+        <div id="fileInfo" class="file-info hidden">
+          <span id="fileName"></span>
+          <button id="removeFile" class="icon-btn">✕</button>
+        </div>
+
+        <button id="analyzeBtn" class="primary-btn" disabled>
+          Analizza Contratto
+        </button>
+      </section>
+
+      <!-- Loading -->
+      <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <p>🕵️‍♂️ Analisi del contratto in corso...</p>
+      </div>
+
+      <!-- Results Section -->
+      <section id="resultsSection" class="results-section hidden">
+        <div class="results-header">
+          <h2 class="section-title">📝 Risultati Analisi</h2>
+          <button id="closeBtn" class="close-btn" title="Chiudi">✕</button>
+        </div>
+
+        <div id="scoreContainer" class="score-container hidden">
+          <span class="score-label">🛡️ Score</span>
+          <span id="scoreValue" class="score-value">--/10</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div id="markdownOutput" class="markdown-body">
+          <!-- AI Response Here -->
+        </div>
+      </section>
+    </main>
+
+    <footer class="custom-footer">
+      <a href="https://falker47.github.io/Nexus-portfolio/" target="_blank"
+        >© <span id="year"></span> Maurizio Falconi - falker47</a
+      >
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
