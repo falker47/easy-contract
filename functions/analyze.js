@@ -69,7 +69,7 @@ IMPORTANTE: Per le sezioni "In Breve" e "Il Consiglio", vai SEMPRE a capo dopo i
       try {
         console.log(`Attempting with key ending in ...${key.slice(-4)}`);
         const genAI = new GoogleGenerativeAI(key);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const result = await model.generateContent([
           systemPrompt,
