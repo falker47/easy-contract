@@ -76,7 +76,6 @@ analyzeBtn.addEventListener('click', async () => {
 
     try {
         // Call Netlify Function
-        // Using relative path, assumes served from same domain or proxy
         const response = await fetch('/.netlify/functions/analyze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -84,11 +83,23 @@ analyzeBtn.addEventListener('click', async () => {
         });
 
         if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.error || "Errore nella comunicazione con il server.");
+            // Try to parse JSON error, fallback to text
+            let errorMessage = `Errore Server (${response.status})`;
+            try {
+                const errData = await response.json();
+                if (errData.error) errorMessage += ": " + errData.error;
+            } catch (e) {
+                // Not JSON, probably timeout or HTML error page
+                const text = await response.text();
+                // Check for common Netlify errors
+                if (text.includes("Task timed out")) errorMessage += ": Timeout (Il modello ci ha messo troppo).";
+                else errorMessage += ": " + text.substring(0, 100);
+            }
+            throw new Error(errorMessage);
         }
 
         const data = await response.json();
+
         const text = data.result;
 
         renderResults(text);
