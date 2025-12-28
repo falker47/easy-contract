@@ -1,5 +1,7 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+
 exports.handler = async (event, context) => {
   // Only allow POST
   if (event.httpMethod !== "POST") {
@@ -7,33 +9,37 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    // 1. Get Secret Key
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      console.error("GEMINI_API_KEY is missing in environment variables.");
-      return { 
-        statusCode: 500, 
-        body: JSON.stringify({ error: "Server Configuration Error: API Key missing." }) 
+    // 1. Get API Keys (Support lists or single key)
+    let keys = [];
+
+    // Check for comma-separated list
+    if (process.env.GEMINI_API_KEYS) {
+      keys = process.env.GEMINI_API_KEYS.split(',').map(k => k.trim()).filter(k => k);
+    }
+    // Fallback to single key if list is empty
+    if (keys.length === 0 && process.env.GEMINI_API_KEY) {
+      keys.push(process.env.GEMINI_API_KEY);
+    }
+
+    if (keys.length === 0) {
+      console.error("No API Keys found in environment variables.");
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Server Configuration Error: API Key missing." })
       };
     }
 
     // 2. Parse Body
     const body = JSON.parse(event.body);
-    const fileData = body.fileData; // Expecting Base64 string (without data:application/pdf;base64 prefix ideally, or we strip it)
+    const fileData = body.fileData;
 
     if (!fileData) {
       return { statusCode: 400, body: JSON.stringify({ error: "No file data provided." }) };
     }
 
-    // Strip header if present (data:application/pdf;base64,...)
     const base64Data = fileData.replace(/^data:application\/pdf;base64,/, "");
 
-    // 3. Setup Gemini
-    const genAI = new GoogleGenerativeAI(apiKey);
-    // Use gemini-1.5-flash as it is fast and efficient for this task
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-    // 4. Define Prompt (Copied from original app.py)
+    // 3. Define Prompt
     const systemPrompt = `
 Agisci come 'Easy Contract', un consulente legale esperto focalizzato sulla massima sintesi e protezione dell'utente.
 Analizza il documento allegato. Il tuo obiettivo è trovare le insidie (costi nascosti, vincoli forti, penali) ed esporle in modo telegrafico.
@@ -57,33 +63,65 @@ IMPORTANTE: Per le sezioni "In Breve" e "Il Consiglio", vai SEMPRE a capo dopo i
 (Vai a Capo. Una sola frase diretta e operativa. Esempi: "Firma pure, ma verifica prima le spese condominiali reali con l'amministratore", "Firma solo se sei sicuro di mantenere il servizio per 2 anni", "Chiedi di rimuovere la clausola di non concorrenza post-contrattuale").
 `;
 
-    // 5. Call API
-    const result = await model.generateContent([
-      systemPrompt,
-      {
-        inlineData: {
-          data: base64Data,
-          mimeType: "application/pdf",
-        },
-      },
-    ]);
+    // 4. Loop through keys
+    let lastError = null;
+    let successResult = null;
 
-    const response = await result.response;
-    const text = response.text();
+    for (const key of keys) {
+      try {
+        console.log(`Attempting with key ending in ...${key.slice(-4)}`);
+        const genAI = new GoogleGenerativeAI(key);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ result: text }),
-    };
+        const result = await model.generateContent([
+          systemPrompt,
+          {
+            inlineData: {
+              data: base64Data,
+              mimeType: "application/pdf",
+            },
+          },
+        ]);
+
+        const response = await result.response;
+        successResult = response.text();
+
+        // If we get here, it worked!
+        break;
+      } catch (error) {
+        console.warn(`Error with key ...${key.slice(-4)}: ${error.message}`);
+        lastError = error;
+
+        // Check if it's a quota error (429) or similar.
+        // If so, continue to next key. 
+        // If not, we might still want to try next key just in case, or fail?
+        // Usually 429 is the main reason to rotate.
+        if (error.message.includes("429") || error.status === 429) {
+          continue;
+        } else {
+          // If it's a different error (e.g. invalid key, bad request), 
+          // we might still want to try others if it was an auth error, 
+          // but let's assume we try others for robustness.
+          continue;
+        }
+      }
+    }
+
+    if (successResult) {
+      return {
+        statusCode: 200,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ result: successResult }),
+      };
+    } else {
+      throw lastError || new Error("Unknown error, all keys failed.");
+    }
 
   } catch (error) {
-    console.error("Error processing request:", error);
+    console.error("All keys failed or fatal error:", error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message }),
+      body: JSON.stringify({ error: "Quota esaurita su tutte le chiavi o errore del server. Riprova più tardi." }),
     };
   }
 };
