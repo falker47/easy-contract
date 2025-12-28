@@ -162,3 +162,22 @@ closeBtn.addEventListener('click', () => {
     resetFile();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 });
+
+// Help Modal Logic
+const helpBtn = document.getElementById('helpBtn');
+const helpModal = document.getElementById('helpModal');
+const closeHelpBtn = document.getElementById('closeHelpBtn');
+
+helpBtn.addEventListener('click', () => {
+    helpModal.classList.remove('hidden');
+});
+
+closeHelpBtn.addEventListener('click', () => {
+    helpModal.classList.add('hidden');
+});
+
+window.addEventListener('click', (e) => {
+    if (e.target === helpModal) {
+        helpModal.classList.add('hidden');
+    }
+});
