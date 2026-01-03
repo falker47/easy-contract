@@ -48,7 +48,12 @@ exports.handler = async (event, context) => {
       try {
         console.log(`Attempting with key ending in ...${key.slice(-4)}`);
         const genAI = new GoogleGenerativeAI(key);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({
+          model: "gemini-2.5-flash",
+          generationConfig: {
+            temperature: 0.0,
+          }
+        });
 
         const result = await model.generateContent([
           systemPrompt,
