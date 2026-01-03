@@ -2,8 +2,8 @@
   --bg-color: #0e1117;
   --card-bg: #262730;
   --text-color: #fafafa;
-  --accent-color: #00bfa5; /* Teal similar to Streamlit default or custom */
-  --accent-hover: #008f7a;
+  --accent-color: #4facfe;
+  --accent-hover: #00e1ecd3;
   --secondary-text: #a3a8b8;
   --highlight-blue: #b1edfc;
   --font-family: "Inter", sans-serif;
@@ -27,9 +27,11 @@ body {
 }
 
 .container {
-  max-width: 700px; /* Streamlit "centered" layout width approx */
+  max-width: 700px;
+  /* Streamlit "centered" layout width approx */
   margin: 0 auto;
-  padding: 2rem 1rem 80px 1rem; /* Bottom padding for footer */
+  padding: 2rem 1rem 80px 1rem;
+  /* Bottom padding for footer */
   flex: 1;
 }
 
@@ -178,6 +180,14 @@ h3 {
   opacity: 0.7;
 }
 
+.disclaimer-text {
+  margin-top: 2rem;
+  font-size: 0.8rem;
+  color: var(--secondary-text);
+  font-style: italic;
+  text-align: center;
+}
+
 /* Results */
 .hidden {
   display: none !important;
@@ -196,6 +206,7 @@ h3 {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -220,6 +231,7 @@ h3 {
   font-size: 1.2rem;
   cursor: pointer;
 }
+
 .close-btn:hover {
   color: white;
 }
@@ -246,22 +258,27 @@ h3 {
   color: var(--text-color);
   font-size: 1rem;
 }
+
 .markdown-body h2 {
   color: var(--highlight-blue);
   margin-top: 1.5rem;
   margin-bottom: 0.5rem;
 }
+
 .markdown-body h3,
 .markdown-body strong {
   color: #e0e0e0;
 }
+
 .markdown-body ul {
   padding-left: 1.5rem;
   margin-bottom: 1rem;
 }
+
 .markdown-body li {
   margin-bottom: 0.5rem;
 }
+
 .markdown-body p {
   margin-bottom: 1rem;
 }
@@ -280,6 +297,7 @@ h3 {
   color: var(--text-color);
   text-decoration: none;
 }
+
 .custom-footer a:hover {
   color: var(--accent-color);
 }
@@ -304,6 +322,7 @@ h3 {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -367,6 +386,7 @@ h3 {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -403,18 +423,19 @@ h3 {
 /* Responsive */
 @media (max-width: 600px) {
   .features-grid {
-    grid-template-columns: repeat(3, 1fr); /* Horizontal layout */
+    grid-template-columns: repeat(3, 1fr);
+    /* Horizontal layout */
     gap: 0.5rem;
   }
-  
+
   .feature-card {
     padding: 0.5rem;
   }
-  
+
   .feature-card .icon {
     font-size: 1.2rem;
   }
-  
+
   .feature-card h3 {
     font-size: 0.75rem;
   }
