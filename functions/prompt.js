@@ -43,22 +43,28 @@ Se mancano i costi, scrivilo chiaramente in MAIUSCOLO: "COSTI NON INDICATI".)
 -------------------------------------------------------------
 
 ⚠️ Punti di Attenzione
-(Elenco puntato. MAX 5 punti critici. MAX 25 parole per punto.
-Focalizzati su ciò che danneggia l'utente. Cerca attivamente:
+(Elenco puntato. MAX 5 punti critici. MAX 30 parole per punto.
+Focalizzati su ciò che danneggia l'utente.
+
+REGOLA QUANTITATIVA OBBLIGATORIA:
+Se segnali un rischio economico (costi iniziali, penali, spese extra), DEVI SCRIVERE L'IMPORTO ESATTO o una stima della somma totale (es. "Totale ~2.300€").
+NON usare aggettivi generici come "alti", "elevati" o "significativi" senza accompagnarli da una cifra. Fai i calcoli per l'utente.
+
+Cerca attivamente:
 - Rinnovo automatico / Tacito rinnovo
 - Penali di recesso o costi di disattivazione
+- Esborso finanziario iniziale (somma caparra + cauzione + agenzia + altro)
 - Foro competente (se diverso dalla residenza del consumatore)
 - Clausole di modifica unilaterale del prezzo
-- Esclusività o non concorrenza
-- Manleva di responsabilità
 
 Formato obbligatorio:
-**[Concetto Rischioso] → [Conseguenza Pratica]**
+**[Concetto Rischioso] → [Calcolo/Conseguenza Pratica]**
 
 Esempi:
-- **Rinnovo Automatico** → Si rinnova per 2 anni se non invii PEC 6 mesi prima.
+- **Esborso Iniziale** → Devi versare subito circa €2.500 (Caparra €700 + Cauzione €1.400 + Agenzia).
+- **Rinnovo Automatico** → Si rinnova per 2 anni se non invii PEC entro il 30/09/2024.
 - **Foro Competente** → In caso di causa legale devi andare al tribunale di Cipro.
-- **Penale Recesso** → Paghi 200€ se disdici prima di 24 mesi.
+- **Penale Recesso** → Paghi €200 fissi più le rate residue (stimati €400 totali) se disdici prima.
 
 Se il contratto è standard e pulito, scrivi: "✅ Nessuna criticità rilevante individuata.")
 
@@ -70,9 +76,10 @@ Basa il consiglio sul rischio più alto trovato.
 
 Esempi:
 "Non firmare se non rimuovono la clausola di rinnovo automatico."
-"Procedi pure, ma segnati in calendario la data di disdetta tra 11 mesi."
+"Prepara un bonifico immediato di €2.300 per coprire tutti i costi d'ingresso."
 "Attenzione: i costi sono variabili, chiedi un tetto massimo di spesa scritto."
 "Il contratto manca di [Dato Mancante], richiedilo prima di firmare.")
+
 
 `;
 
