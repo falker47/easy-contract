@@ -3,22 +3,23 @@ document.getElementById('year').textContent = new Date().getFullYear();
 
 // Elements
 const fileInput = document.getElementById('fileInput');
+const cameraInput = document.getElementById('cameraInput');
+const cameraBtn = document.getElementById('cameraBtn');
 const dropZone = document.getElementById('dropZone');
 const fileInfo = document.getElementById('fileInfo');
 const fileNameSpan = document.getElementById('fileName');
 const removeFileBtn = document.getElementById('removeFile');
 const analyzeBtn = document.getElementById('analyzeBtn');
-const loading = document.getElementById('loading');
-const resultsSection = document.getElementById('resultsSection');
-const markdownOutput = document.getElementById('markdownOutput');
-const scoreValue = document.getElementById('scoreValue');
-const scoreContainer = document.getElementById('scoreContainer');
-const closeBtn = document.getElementById('closeBtn');
-
-let currentFileBase64 = null;
 
 // File Upload Logic
-fileInput.addEventListener('change', handleFileSelect);
+fileInput.addEventListener('change', (e) => handleFileSelect(e.target.files[0]));
+cameraInput.addEventListener('change', (e) => handleFileSelect(e.target.files[0]));
+
+// Camera Button Logic
+cameraBtn.addEventListener('click', () => {
+    cameraInput.click();
+});
+
 dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
     dropZone.parentNode.classList.add('dragover');
@@ -31,16 +32,17 @@ dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
     dropZone.parentNode.classList.remove('dragover');
     if (e.dataTransfer.files.length) {
-        fileInput.files = e.dataTransfer.files;
-        handleFileSelect();
+        handleFileSelect(e.dataTransfer.files[0]);
     }
 });
 
-function handleFileSelect() {
-    const file = fileInput.files[0];
-    if (file && file.type === "application/pdf") {
-        // Netlify Functions have a 6MB payload limit (Base64 increases size by ~33%).
-        // So we limit file to ~4MB to be safe.
+function handleFileSelect(file) {
+    if (!file) return;
+
+    // Validate type (PDF or Image)
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/heic'];
+    if (validTypes.includes(file.type)) {
+        // Netlify Functions have a 6MB payload limit
         const maxSize = 4 * 1024 * 1024; // 4MB
         if (file.size > maxSize) {
             alert("⚠️ Il file è troppo grande! Per questo server gratuito, il limite è 4MB.");
@@ -55,12 +57,12 @@ function handleFileSelect() {
         // Read file as Base64
         const reader = new FileReader();
         reader.onload = function (e) {
-            currentFileBase64 = e.target.result; // data:application/pdf;base64,...
+            currentFileBase64 = e.target.result; // data:application/pdf;base64,... or data:image/...
         };
         reader.readAsDataURL(file);
     } else {
         resetFile();
-        alert("Per favore carica un file PDF valido.");
+        alert("Per favore carica un file PDF o un'immagine valida (JPG, PNG).");
     }
 }
 
@@ -68,6 +70,7 @@ removeFileBtn.addEventListener('click', resetFile);
 
 function resetFile() {
     fileInput.value = "";
+    cameraInput.value = ""; // Reset camera input too
     currentFileBase64 = null;
     fileInfo.classList.add('hidden');
     analyzeBtn.disabled = true;

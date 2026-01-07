@@ -29,13 +29,20 @@ exports.handler = async (event, context) => {
 
     // 2. Parse Body
     const body = JSON.parse(event.body);
-    const fileData = body.fileData;
+    const fileData = body.fileData; // e.g., "data:image/jpeg;base64,..."
 
     if (!fileData) {
       return { statusCode: 400, body: JSON.stringify({ error: "No file data provided." }) };
     }
 
-    const base64Data = fileData.replace(/^data:application\/pdf;base64,/, "");
+    // Extract Mime Type and Base64 Data
+    const match = fileData.match(/^data:(.+);base64,(.+)$/);
+    if (!match) {
+      return { statusCode: 400, body: JSON.stringify({ error: "Invalid file format." }) };
+    }
+
+    const mimeType = match[1];
+    const base64Data = match[2];
 
     // 3. Define Prompt
     const systemPrompt = require("./prompt");
@@ -49,7 +56,7 @@ exports.handler = async (event, context) => {
         console.log(`Attempting with key ending in ...${key.slice(-4)}`);
         const genAI = new GoogleGenerativeAI(key);
         const model = genAI.getGenerativeModel({
-          model: "gemini-2.5-flash",
+          model: "gemini-2.0-flash-exp", // Updated to latest flash model which is good for vision
           generationConfig: {
             temperature: 0.0,
           }
@@ -60,7 +67,7 @@ exports.handler = async (event, context) => {
           {
             inlineData: {
               data: base64Data,
-              mimeType: "application/pdf",
+              mimeType: mimeType,
             },
           },
         ]);

@@ -169,6 +169,37 @@ h3 {
   max-width: 300px;
 }
 
+.camera-btn {
+  display: none; /* Hidden by default on desktop */
+  margin-top: 1rem;
+  background-color: transparent;
+  border: 2px solid var(--accent-color);
+  color: var(--accent-color);
+  padding: 10px 24px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  width: 100%;
+  max-width: 300px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.camera-btn:hover {
+  background-color: rgba(79, 172, 254, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Show camera button on mobile/tablet (using coarse pointer or screen size as proxy) */
+@media (max-width: 1024px), (pointer: coarse) {
+  .camera-btn.mobile-only {
+    display: inline-flex;
+  }
+}
+
 .primary-btn:hover:not(:disabled) {
   background-color: var(--accent-hover);
   transform: scale(1.02);

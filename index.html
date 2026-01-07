@@ -41,10 +41,15 @@
     <!-- Upload Section -->
     <section class="upload-section" id="uploadSection">
       <div class="file-drop-area" id="dropZone">
-        <span class="fake-btn">Scegli File PDF</span>
+        <span class="fake-btn">Scegli File</span>
         <span class="file-msg">o trascina qui</span>
-        <input class="file-input" type="file" id="fileInput" accept="application/pdf" />
+        <input class="file-input" type="file" id="fileInput" accept="application/pdf, image/*" />
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" />
       </div>
+      
+      <button id="cameraBtn" class="camera-btn mobile-only">
+        📷 Scatta Foto
+      </button>
       <div id="fileInfo" class="file-info hidden">
         <span id="fileName"></span>
         <button id="removeFile" class="icon-btn">✕</button>
