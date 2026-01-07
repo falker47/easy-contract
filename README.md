@@ -15,7 +15,7 @@ Il progetto è costruito con un'architettura **Serverless** semplice e leggera:
 
 - **Frontend**: HTML5, CSS3, Vanilla JavaScript. Nessun framework complesso.
 - **Backend**: [Netlify Functions](https://docs.netlify.com/functions/overview/) (Node.js) per gestire le chiamate sicure alle API.
-- **AI**: [Google Gemini API](https://ai.google.dev/) (modello `gemini-2.0-flash-exp` o `gemini-1.5-flash`).
+- **AI**: [Google Gemini API](https://ai.google.dev/) (modello `gemini-2.5-flash`).
 
 ## 🛠️ Prerequisiti
 
