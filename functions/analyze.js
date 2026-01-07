@@ -1,5 +1,8 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
+// Configuration
+const MODEL_NAME = "gemini-2.5-flash"; // Global setting for the model
+
 exports.handler = async (event, context) => {
   // Only allow POST
   if (event.httpMethod !== "POST") {
@@ -85,7 +88,7 @@ exports.handler = async (event, context) => {
         console.log(`Attempting with key ending in ...${key.slice(-4)}`);
         const genAI = new GoogleGenerativeAI(key);
         const model = genAI.getGenerativeModel({
-          model: "gemini-2.5-flash",
+          model: MODEL_NAME,
           generationConfig: {
             temperature: 0.0,
           }
