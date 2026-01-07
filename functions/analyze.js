@@ -85,7 +85,7 @@ exports.handler = async (event, context) => {
         console.log(`Attempting with key ending in ...${key.slice(-4)}`);
         const genAI = new GoogleGenerativeAI(key);
         const model = genAI.getGenerativeModel({
-          model: "gemini-2.0-flash-exp", // Updated to latest flash model which is good for vision
+          model: "gemini-2.5-flash",
           generationConfig: {
             temperature: 0.0,
           }
@@ -103,15 +103,10 @@ exports.handler = async (event, context) => {
         lastError = error;
 
         // Check if it's a quota error (429) or similar.
-        // If so, continue to next key. 
-        // If not, we might still want to try next key just in case, or fail?
-        // Usually 429 is the main reason to rotate.
         if (error.message.includes("429") || error.status === 429) {
           continue;
         } else {
-          // If it's a different error (e.g. invalid key, bad request), 
-          // we might still want to try others if it was an auth error, 
-          // but let's assume we try others for robustness.
+          // Try next key regardless, but keep error
           continue;
         }
       }
@@ -124,14 +119,31 @@ exports.handler = async (event, context) => {
         body: JSON.stringify({ result: successResult }),
       };
     } else {
+      // Return the actual error message for debugging if not strictly a quota issue
+      const msg = lastError ? lastError.message : "Unknown error";
+      const isQuota = msg.includes("429") || msg.includes("quota");
+
       throw lastError || new Error("Unknown error, all keys failed.");
     }
 
   } catch (error) {
     console.error("All keys failed or fatal error:", error);
+
+    // Provide more specific error info to the user
+    const errorMsg = error.message || "Errore sconosciuto";
+    let userMsg = "Errore del server. ";
+
+    if (errorMsg.includes("429") || errorMsg.includes("quota")) {
+      userMsg = "Quota esaurita su tutte le chiavi API. Riprova più tardi.";
+    } else if (errorMsg.includes("not found")) {
+      userMsg = "Modello AI non trovato o non disponibile per questa chiave.";
+    } else {
+      userMsg += errorMsg;
+    }
+
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Quota esaurita su tutte le chiavi o errore del server. Riprova più tardi." }),
+      body: JSON.stringify({ error: userMsg }),
     };
   }
 };
