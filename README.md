@@ -2,7 +2,7 @@
 
 **Easy Contract** è uno strumento web per l'analisi automatica di contratti legali, alimentato dall'intelligenza artificiale di Google Gemini.
 
-Il sistema analizza file PDF caricati dall'utente e fornisce un report strutturato evidenziando:
+Il sistema analizza file PDF o foto di contratti caricati dall'utente e fornisce un report strutturato evidenziando:
 
 - Punteggio di sicurezza 🛡️
 - Sintesi dei vincoli principali 💡
@@ -91,7 +91,7 @@ easy-contract/
 
 ## 🔒 Sicurezza
 
-- **No Upload**: I file PDF vengono processati al volo convertendoli in Base64 e inviati a Gemini. Il codice attuale **non** salva i file permanentemente su disco o storage cloud.
+- **No Upload**: I file (PDF o Immagini) vengono processati al volo convertendoli in Base64 e inviati a Gemini. Il codice attuale **non** salva i file permanentemente su disco o storage cloud.
 - **API Key Protection**: Le chiavi API risiedono solo sul server (Netlify Functions) e non sono mai esposte al client.
 
 ## 📄 Licenza
