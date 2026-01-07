@@ -12,8 +12,10 @@ const removeFileBtn = document.getElementById('removeFile');
 const analyzeBtn = document.getElementById('analyzeBtn');
 
 // File Upload Logic
-fileInput.addEventListener('change', (e) => handleFileSelect(e.target.files[0]));
-cameraInput.addEventListener('change', (e) => handleFileSelect(e.target.files[0]));
+let currentFiles = []; // Array of { base64: string, name: string, type: string }
+
+fileInput.addEventListener('change', (e) => handleFileSelection(e.target.files));
+cameraInput.addEventListener('change', (e) => handleFileSelection(e.target.files));
 
 // Camera Button Logic
 cameraBtn.addEventListener('click', () => {
@@ -32,37 +34,93 @@ dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
     dropZone.parentNode.classList.remove('dragover');
     if (e.dataTransfer.files.length) {
-        handleFileSelect(e.dataTransfer.files[0]);
+        handleFileSelection(e.dataTransfer.files);
     }
 });
 
-function handleFileSelect(file) {
-    if (!file) return;
+function handleFileSelection(fileList) {
+    if (!fileList || fileList.length === 0) return;
 
-    // Validate type (PDF or Image)
+    const files = Array.from(fileList);
     const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/heic'];
-    if (validTypes.includes(file.type)) {
-        // Netlify Functions have a 6MB payload limit
-        const maxSize = 4 * 1024 * 1024; // 4MB
-        if (file.size > maxSize) {
-            alert("⚠️ Il file è troppo grande! Per questo server gratuito, il limite è 4MB.");
+
+    // Check if new files contain PDF
+    const hasPdf = files.some(f => f.type === 'application/pdf');
+    // Check if we already have files
+    const hasExistingfiles = currentFiles.length > 0;
+
+    // Logic: 
+    // 1. If PDF is selected -> Clear everything else and set as single file (simplest logic for now).
+    // 2. If Images are selected -> Append to existing images (unless existing was a PDF, then clear).
+
+    // If new file is PDF, strictly reset and take only that PDF
+    if (hasPdf) {
+        if (files.length > 1 || hasExistingfiles) {
+            // Warn or just do it? Let's just do it but maybe warn if we want to be fancy.
+            // For now: "PDF mode: Single file only" logic is easiest/safest.
             resetFile();
-            return;
         }
+        // Take the first PDF found
+        const pdf = files.find(f => f.type === 'application/pdf');
+        processFile(pdf); // Will add it
+        return;
+    }
 
-        fileNameSpan.textContent = file.name;
-        fileInfo.classList.remove('hidden');
-        analyzeBtn.disabled = false;
-
-        // Read file as Base64
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            currentFileBase64 = e.target.result; // data:application/pdf;base64,... or data:image/...
-        };
-        reader.readAsDataURL(file);
-    } else {
+    // If we have existing PDF, clear it before adding images
+    if (currentFiles.some(f => f.type === 'application/pdf')) {
         resetFile();
-        alert("Per favore carica un file PDF o un'immagine valida (JPG, PNG).");
+    }
+
+    // Process all images
+    let validImages = files.filter(f => validTypes.includes(f.type) && f.type !== 'application/pdf');
+
+    if (validImages.length === 0 && !hasPdf) {
+        alert("Per favore carica un file PDF o immagini valide (JPG, PNG).");
+        return;
+    }
+
+    validImages.forEach(processFile);
+}
+
+function processFile(file) {
+    // Netlify Functions have a 6MB payload limit total.
+    // Check total size estimate.
+    const currentTotalSize = currentFiles.reduce((acc, f) => acc + (f.size || 0), 0);
+    const maxSize = 4.5 * 1024 * 1024; // 4.5MB safe limit
+
+    if (currentTotalSize + file.size > maxSize) {
+        alert("⚠️ Limite dimensioni raggiunto! (Max ~4.5MB totali)");
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        currentFiles.push({
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            base64: e.target.result
+        });
+        updateUI();
+    };
+    reader.readAsDataURL(file);
+}
+
+function updateUI() {
+    if (currentFiles.length === 0) {
+        fileInfo.classList.add('hidden');
+        analyzeBtn.disabled = true;
+        fileNameSpan.textContent = "";
+        return;
+    }
+
+    fileInfo.classList.remove('hidden');
+    analyzeBtn.disabled = false;
+
+    if (currentFiles.length === 1) {
+        fileNameSpan.textContent = currentFiles[0].name;
+    } else {
+        fileNameSpan.textContent = `${currentFiles.length} file selezionati`;
     }
 }
 
@@ -70,28 +128,31 @@ removeFileBtn.addEventListener('click', resetFile);
 
 function resetFile() {
     fileInput.value = "";
-    cameraInput.value = ""; // Reset camera input too
-    currentFileBase64 = null;
-    fileInfo.classList.add('hidden');
-    analyzeBtn.disabled = true;
-    fileNameSpan.textContent = "";
+    cameraInput.value = "";
+    currentFiles = [];
+    updateUI();
 }
 
 // Analysis Logic
 analyzeBtn.addEventListener('click', async () => {
-    if (!currentFileBase64) return;
+    if (currentFiles.length === 0) return;
 
     // UI State
     analyzeBtn.disabled = true;
     loading.classList.remove('hidden');
     resultsSection.classList.add('hidden');
 
+    // Prepare payload: array of base64 strings
+    const payload = {
+        fileData: currentFiles.map(f => f.base64)
+    };
+
     try {
         // Call Netlify Function
         const response = await fetch('/.netlify/functions/analyze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fileData: currentFileBase64 })
+            body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
