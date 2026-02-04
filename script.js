@@ -269,19 +269,96 @@ exportPdfBtn.addEventListener('click', () => {
     const headerActions = clone.querySelector('.header-actions');
     if (headerActions) headerActions.remove();
 
-    // Style adjustments for PDF
-    clone.style.backgroundColor = '#1a1a2e';
-    clone.style.padding = '20px';
+    // === LIGHT THEME STYLING FOR PDF ===
+    // Container
+    clone.style.backgroundColor = '#ffffff';
+    clone.style.padding = '30px';
     clone.style.borderRadius = '0';
+    clone.style.color = '#1a1a1a';
+    clone.style.fontFamily = 'Inter, Arial, sans-serif';
+
+    // Section title
+    const sectionTitle = clone.querySelector('.section-title');
+    if (sectionTitle) {
+        sectionTitle.style.color = '#2563eb';
+        sectionTitle.style.marginBottom = '20px';
+    }
+
+    // Score container
+    const scoreContainer = clone.querySelector('.score-container');
+    if (scoreContainer) {
+        scoreContainer.style.backgroundColor = '#f0f9ff';
+        scoreContainer.style.padding = '15px 20px';
+        scoreContainer.style.borderRadius = '8px';
+        scoreContainer.style.marginBottom = '20px';
+    }
+
+    const scoreLabel = clone.querySelector('.score-label');
+    if (scoreLabel) scoreLabel.style.color = '#334155';
+
+    const scoreValue = clone.querySelector('.score-value');
+    if (scoreValue) scoreValue.style.color = '#2563eb';
+
+    // Divider
+    const divider = clone.querySelector('.divider');
+    if (divider) {
+        divider.style.backgroundColor = '#e2e8f0';
+        divider.style.margin = '25px 0';
+    }
+
+    // Markdown body
+    const markdownBody = clone.querySelector('.markdown-body');
+    if (markdownBody) {
+        markdownBody.style.color = '#1e293b';
+        markdownBody.style.lineHeight = '1.7';
+
+        // All headers
+        markdownBody.querySelectorAll('h1, h2, h3').forEach(h => {
+            h.style.color = '#1e40af';
+            h.style.marginTop = '20px';
+            h.style.marginBottom = '10px';
+        });
+
+        // Strong/bold text
+        markdownBody.querySelectorAll('strong').forEach(s => {
+            s.style.color = '#0f172a';
+        });
+
+        // List items
+        markdownBody.querySelectorAll('li').forEach(li => {
+            li.style.color = '#334155';
+            li.style.marginBottom = '8px';
+        });
+
+        // Paragraphs
+        markdownBody.querySelectorAll('p').forEach(p => {
+            p.style.color = '#334155';
+            p.style.marginBottom = '12px';
+        });
+    }
+
+    // Add header with branding
+    const header = document.createElement('div');
+    header.innerHTML = `
+        <div style="text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #2563eb;">
+            <h1 style="margin: 0; font-size: 24px; color: #2563eb;">📝 Easy Contract</h1>
+            <p style="margin: 5px 0 0 0; font-size: 12px; color: #64748b;">Analisi Contrattuale AI - ${new Date().toLocaleDateString('it-IT')}</p>
+        </div>
+    `;
+    clone.insertBefore(header, clone.firstChild);
+
+    // Remove the original section-title (we have header now)
+    if (sectionTitle) sectionTitle.remove();
 
     const opt = {
-        margin: [10, 10, 10, 10],
+        margin: [15, 15, 15, 15],
         filename: 'Analisi-Contratto-EasyContract.pdf',
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: {
             scale: 2,
-            backgroundColor: '#0e1117',
-            useCORS: true
+            backgroundColor: '#ffffff',
+            useCORS: true,
+            logging: false
         },
         jsPDF: {
             unit: 'mm',
