@@ -9,6 +9,9 @@ exports.handler = async (event, context) => {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
+  // Trace execution
+  const logs = [];
+
   try {
     // 1. Get API Keys (Support lists or single key)
     let keys = [];
@@ -82,9 +85,13 @@ exports.handler = async (event, context) => {
     // 4. Loop through keys
     let lastError = null;
     let successResult = null;
+    const logs = []; // Trace execution
 
-    for (const key of keys) {
+    logs.push(`Found ${keys.length} keys.`);
+
+    for (const [index, key] of keys.entries()) {
       try {
+        logs.push(`Attempting key ${index} (ending in ...${key.slice(-4)})`);
         console.log(`Attempting with key ending in ...${key.slice(-4)}`);
         const genAI = new GoogleGenerativeAI(key);
         const model = genAI.getGenerativeModel({
@@ -94,14 +101,18 @@ exports.handler = async (event, context) => {
           }
         });
 
+        logs.push("Generating content...");
         const result = await model.generateContent(parts);
 
+        logs.push("Awaiting response...");
         const response = await result.response;
         successResult = response.text();
+        logs.push("Success!");
 
         // If we get here, it worked!
         break;
       } catch (error) {
+        logs.push(`Error with key ${index}: ${error.message}`);
         console.warn(`Error with key ...${key.slice(-4)}: ${error.message}`);
         lastError = error;
 
@@ -124,7 +135,10 @@ exports.handler = async (event, context) => {
     } else {
       // Return the actual error message for debugging if not strictly a quota issue
       const msg = lastError ? lastError.message : "Unknown error";
-      const isQuota = msg.includes("429") || msg.includes("quota");
+
+      // If lastError is null here, it means the loop finished but successResult is null AND lastError is null.
+      // This implies keys was empty (checked above) or something weird.
+      if (!lastError) logs.push("lastError was null after loop!?");
 
       throw lastError || new Error("Unknown error, all keys failed.");
     }
@@ -141,12 +155,40 @@ exports.handler = async (event, context) => {
       ...error
     };
 
+    // If 'logs' is defined in this scope (it is not if error happened before logs def), handle safely
+    // Since we defined logs inside try, it might not be available if error happens before.
+    // actually logs is inside the try block. 
+    // We need to move logs declaration up or handle it.
+    // QUICK FIX: We know the structure.
+
     return {
       statusCode: 500,
       body: JSON.stringify({
         error: `DEBUG ERROR: ${error.message}`,
-        details: errorDetails
+        details: errorDetails,
+        trace: logs // Return the execution trace
       }),
     };
   }
+
+} catch (error) {
+  console.error("All keys failed or fatal error:", error);
+
+  // DEBUG MODE: Return full error details
+  const errorDetails = {
+    message: error.message,
+    stack: error.stack,
+    name: error.name,
+    // If it's a GoogleGenerativeAIError, it often has hidden props
+    ...error
+  };
+
+  return {
+    statusCode: 500,
+    body: JSON.stringify({
+      error: `DEBUG ERROR: ${error.message}`,
+      details: errorDetails
+    }),
+  };
+}
 };
