@@ -1,7 +1,7 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 // Configuration
-const MODEL_NAME = "gemini-2.5-flash"; // Global setting for the model
+const MODEL_NAME = "gemini-1.5-flash"; // Use stable 1.5 Flash
 
 exports.handler = async (event, context) => {
   // Only allow POST
@@ -9,7 +9,7 @@ exports.handler = async (event, context) => {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  // Trace execution
+  // Trace execution -> Declared OUTSIDE try block to be accessible in catch
   const logs = [];
 
   try {
@@ -51,13 +51,9 @@ exports.handler = async (event, context) => {
     // Prepare parts for Gemini
     const parts = [];
 
-    // Add System Prompt first (as text)
-    // Note: Gemini .generateContent accepts an array of parts. 
-    // The system prompt is usually passed as a separate argument to getGenerativeModel or as part of the content.
-    // In this specific legacy code, it was passed as the first element of the array.
-    // We will keep that structure: [systemPrompt, ...imageParts]
+    // Load System Prompt
     const systemPrompt = require("./prompt");
-    parts.push(systemPrompt);
+    // Note: System Prompt is passed to getGenerativeModel systemInstruction
 
     for (const fileData of fileDataArray) {
       // Extract Mime Type and Base64 Data
@@ -78,14 +74,13 @@ exports.handler = async (event, context) => {
       });
     }
 
-    if (parts.length <= 1) { // Only system prompt
+    if (parts.length === 0) { // Check if we have files
       return { statusCode: 400, body: JSON.stringify({ error: "No valid files found." }) };
     }
 
     // 4. Loop through keys
     let lastError = null;
     let successResult = null;
-    const logs = []; // Trace execution
 
     logs.push(`Found ${keys.length} keys.`);
 
@@ -96,6 +91,7 @@ exports.handler = async (event, context) => {
         const genAI = new GoogleGenerativeAI(key);
         const model = genAI.getGenerativeModel({
           model: MODEL_NAME,
+          systemInstruction: systemPrompt, // Correct way to pass system prompt
           generationConfig: {
             temperature: 0.0,
           }
@@ -134,10 +130,8 @@ exports.handler = async (event, context) => {
       };
     } else {
       // Return the actual error message for debugging if not strictly a quota issue
-      const msg = lastError ? lastError.message : "Unknown error";
 
       // If lastError is null here, it means the loop finished but successResult is null AND lastError is null.
-      // This implies keys was empty (checked above) or something weird.
       if (!lastError) logs.push("lastError was null after loop!?");
 
       throw lastError || new Error("Unknown error, all keys failed.");
@@ -155,12 +149,6 @@ exports.handler = async (event, context) => {
       ...error
     };
 
-    // If 'logs' is defined in this scope (it is not if error happened before logs def), handle safely
-    // Since we defined logs inside try, it might not be available if error happens before.
-    // actually logs is inside the try block. 
-    // We need to move logs declaration up or handle it.
-    // QUICK FIX: We know the structure.
-
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -170,25 +158,4 @@ exports.handler = async (event, context) => {
       }),
     };
   }
-
-} catch (error) {
-  console.error("All keys failed or fatal error:", error);
-
-  // DEBUG MODE: Return full error details
-  const errorDetails = {
-    message: error.message,
-    stack: error.stack,
-    name: error.name,
-    // If it's a GoogleGenerativeAIError, it often has hidden props
-    ...error
-  };
-
-  return {
-    statusCode: 500,
-    body: JSON.stringify({
-      error: `DEBUG ERROR: ${error.message}`,
-      details: errorDetails
-    }),
-  };
-}
 };
