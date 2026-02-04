@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 
 <body>
@@ -46,7 +47,7 @@
         <input class="file-input" type="file" id="fileInput" accept="application/pdf, image/*" multiple />
         <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" multiple />
       </div>
-      
+
       <button id="cameraBtn" class="camera-btn mobile-only">
         📷 Scatta Foto
       </button>
@@ -70,7 +71,10 @@
     <section id="resultsSection" class="results-section hidden">
       <div class="results-header">
         <h2 class="section-title">📝 Risultati Analisi</h2>
-        <button id="closeBtn" class="close-btn" title="Chiudi">✕</button>
+        <div class="header-actions">
+          <button id="exportPdfBtn" class="export-btn" title="Esporta PDF">📄 PDF</button>
+          <button id="closeBtn" class="close-btn" title="Chiudi">✕</button>
+        </div>
       </div>
 
       <div id="scoreContainer" class="score-container hidden">
@@ -109,7 +113,8 @@
         </p>
         <ul>
           <li>📂 <strong>Carica il PDF</strong>: Trascina il tuo contratto nell'area dedicata.</li>
-          <li>📷 <strong>Scatta Foto</strong>: Su mobile/tablet, usa la fotocamera per scansionare le pagine del contratto (anche multiple).</li>
+          <li>📷 <strong>Scatta Foto</strong>: Su mobile/tablet, usa la fotocamera per scansionare le pagine del
+            contratto (anche multiple).</li>
           <li>🤖 <strong>Analisi AI</strong>: Il sistema legge il documento o le immagini in pochi secondi.</li>
           <li>🛡️ <strong>Ottieni il Report</strong>: Ricevi un punteggio di sicurezza (1-10) e una lista di rischi e
             consigli operativi.</li>

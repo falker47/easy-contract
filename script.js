@@ -255,3 +255,52 @@ window.addEventListener('click', (e) => {
         helpModal.classList.add('hidden');
     }
 });
+
+// PDF Export Logic
+const exportPdfBtn = document.getElementById('exportPdfBtn');
+
+exportPdfBtn.addEventListener('click', () => {
+    const resultsSection = document.getElementById('resultsSection');
+
+    // Create a clone to avoid modifying the original
+    const clone = resultsSection.cloneNode(true);
+
+    // Remove header buttons from clone
+    const headerActions = clone.querySelector('.header-actions');
+    if (headerActions) headerActions.remove();
+
+    // Style adjustments for PDF
+    clone.style.backgroundColor = '#1a1a2e';
+    clone.style.padding = '20px';
+    clone.style.borderRadius = '0';
+
+    const opt = {
+        margin: [10, 10, 10, 10],
+        filename: 'Analisi-Contratto-EasyContract.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+            scale: 2,
+            backgroundColor: '#0e1117',
+            useCORS: true
+        },
+        jsPDF: {
+            unit: 'mm',
+            format: 'a4',
+            orientation: 'portrait'
+        }
+    };
+
+    // Show loading state
+    exportPdfBtn.disabled = true;
+    exportPdfBtn.textContent = '⏳...';
+
+    html2pdf().set(opt).from(clone).save().then(() => {
+        exportPdfBtn.disabled = false;
+        exportPdfBtn.textContent = '📄 PDF';
+    }).catch((err) => {
+        console.error('PDF export error:', err);
+        exportPdfBtn.disabled = false;
+        exportPdfBtn.textContent = '📄 PDF';
+        alert('Errore durante l\'esportazione PDF');
+    });
+});

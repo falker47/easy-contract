@@ -170,7 +170,8 @@ h3 {
 }
 
 .camera-btn {
-  display: none; /* Hidden by default on desktop */
+  display: none;
+  /* Hidden by default on desktop */
   margin-top: 1rem;
   background-color: transparent;
   border: 2px solid var(--accent-color);
@@ -194,7 +195,8 @@ h3 {
 }
 
 /* Show camera button on mobile/tablet (using coarse pointer or screen size as proxy) */
-@media (max-width: 1024px), (pointer: coarse) {
+@media (max-width: 1024px),
+(pointer: coarse) {
   .camera-btn.mobile-only {
     display: inline-flex;
   }
@@ -265,6 +267,32 @@ h3 {
 
 .close-btn:hover {
   color: white;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.export-btn {
+  background-color: transparent;
+  border: 1.5px solid var(--accent-color);
+  color: var(--accent-color);
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.export-btn:hover {
+  background-color: rgba(79, 172, 254, 0.15);
+  transform: translateY(-1px);
 }
 
 .score-container {
