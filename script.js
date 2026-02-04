@@ -257,127 +257,116 @@ window.addEventListener('click', (e) => {
 });
 
 // PDF Export Logic
+// PDF Export Logic
 const exportPdfBtn = document.getElementById('exportPdfBtn');
 
 exportPdfBtn.addEventListener('click', () => {
     const resultsSection = document.getElementById('resultsSection');
 
-    // Create a clone to avoid modifying the original
-    const clone = resultsSection.cloneNode(true);
+    // 1. Create a temporary container for the PDF content to simulate A4 width
+    // We append this to the body so styles resolve correctly
+    const pdfContainer = document.createElement('div');
+    pdfContainer.style.position = 'fixed';
+    pdfContainer.style.top = '-10000px'; // Off-screen
+    pdfContainer.style.left = '0';
+    pdfContainer.style.width = '210mm'; // A4 width
+    pdfContainer.style.backgroundColor = '#ffffff';
+    pdfContainer.style.zIndex = '-9999';
+    document.body.appendChild(pdfContainer);
 
-    // Remove header buttons from clone
+    // 2. Clone the content into the container
+    const clone = resultsSection.cloneNode(true);
+    pdfContainer.appendChild(clone);
+
+    // 3. Remove non-printable elements
     const headerActions = clone.querySelector('.header-actions');
     if (headerActions) headerActions.remove();
 
-    // === LIGHT THEME STYLING FOR PDF ===
-    // Container
+    // 4. Force LIGHT THEME styles explicitly on the clone structure
     clone.style.backgroundColor = '#ffffff';
-    clone.style.padding = '30px';
-    clone.style.borderRadius = '0';
-    clone.style.color = '#1a1a1a';
-    clone.style.fontFamily = 'Inter, Arial, sans-serif';
+    clone.style.color = '#000000';
+    clone.style.padding = '20px 40px'; // Margins inside the A4 sheet
+    clone.style.fontFamily = 'Arial, sans-serif';
+    clone.style.border = 'none';
 
-    // Section title
-    const sectionTitle = clone.querySelector('.section-title');
-    if (sectionTitle) {
-        sectionTitle.style.color = '#2563eb';
-        sectionTitle.style.marginBottom = '20px';
-    }
+    // Headers
+    clone.querySelectorAll('h1, h2, h3').forEach(h => {
+        h.style.color = '#1a56db'; // Blue headers
+        h.style.marginTop = '20px';
+        h.style.marginBottom = '10px';
+    });
 
-    // Score container
+    // Paragraphs and text
+    clone.querySelectorAll('p, li, div, span, strong').forEach(el => {
+        el.style.color = '#333333'; // Dark grey text
+    });
+
+    // Score Box specific styling
     const scoreContainer = clone.querySelector('.score-container');
     if (scoreContainer) {
         scoreContainer.style.backgroundColor = '#f0f9ff';
-        scoreContainer.style.padding = '15px 20px';
+        scoreContainer.style.border = '1px solid #bae6fd';
+        scoreContainer.style.padding = '15px';
         scoreContainer.style.borderRadius = '8px';
         scoreContainer.style.marginBottom = '20px';
+
+        // Fix score text colors specifically
+        const scoreLabel = scoreContainer.querySelector('.score-label');
+        const scoreValue = scoreContainer.querySelector('.score-value');
+        if (scoreLabel) scoreLabel.style.color = '#000000';
+        if (scoreValue) scoreValue.style.color = '#1a56db';
     }
 
-    const scoreLabel = clone.querySelector('.score-label');
-    if (scoreLabel) scoreLabel.style.color = '#334155';
-
-    const scoreValue = clone.querySelector('.score-value');
-    if (scoreValue) scoreValue.style.color = '#2563eb';
-
-    // Divider
-    const divider = clone.querySelector('.divider');
-    if (divider) {
-        divider.style.backgroundColor = '#e2e8f0';
-        divider.style.margin = '25px 0';
-    }
-
-    // Markdown body
+    // Markdown content tweaks
     const markdownBody = clone.querySelector('.markdown-body');
     if (markdownBody) {
-        markdownBody.style.color = '#1e293b';
-        markdownBody.style.lineHeight = '1.7';
-
-        // All headers
-        markdownBody.querySelectorAll('h1, h2, h3').forEach(h => {
-            h.style.color = '#1e40af';
-            h.style.marginTop = '20px';
-            h.style.marginBottom = '10px';
-        });
-
-        // Strong/bold text
-        markdownBody.querySelectorAll('strong').forEach(s => {
-            s.style.color = '#0f172a';
-        });
-
-        // List items
-        markdownBody.querySelectorAll('li').forEach(li => {
-            li.style.color = '#334155';
-            li.style.marginBottom = '8px';
-        });
-
-        // Paragraphs
-        markdownBody.querySelectorAll('p').forEach(p => {
-            p.style.color = '#334155';
-            p.style.marginBottom = '12px';
-        });
+        markdownBody.style.fontSize = '12px'; // Readable print size
+        markdownBody.style.lineHeight = '1.5';
     }
 
-    // Add header with branding
+    // Add Header Branding
     const header = document.createElement('div');
     header.innerHTML = `
-        <div style="text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #2563eb;">
-            <h1 style="margin: 0; font-size: 24px; color: #2563eb;">📝 Easy Contract</h1>
-            <p style="margin: 5px 0 0 0; font-size: 12px; color: #64748b;">Analisi Contrattuale AI - ${new Date().toLocaleDateString('it-IT')}</p>
+        <div style="border-bottom: 2px solid #1a56db; margin-bottom: 20px; padding-bottom: 10px;">
+            <h1 style="color: #1a56db; font-size: 20px; margin: 0;">Easy Contract</h1>
+            <p style="color: #666; font-size: 10px; margin: 0;">Report Generato il ${new Date().toLocaleDateString('it-IT')}</p>
         </div>
     `;
     clone.insertBefore(header, clone.firstChild);
 
-    // Remove the original section-title (we have header now)
-    if (sectionTitle) sectionTitle.remove();
+    // Remove old titles if redundant
+    const oldTitle = clone.querySelector('.section-title');
+    if (oldTitle) oldTitle.style.display = 'none';
 
+    // 5. Options
     const opt = {
-        margin: [15, 15, 15, 15],
-        filename: 'Analisi-Contratto-EasyContract.pdf',
+        margin: 0,
+        filename: 'Report_EasyContract.pdf',
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: {
             scale: 2,
-            backgroundColor: '#ffffff',
             useCORS: true,
-            logging: false
+            scrollY: 0,
+            windowWidth: 794 // A4 width in px at 96dpi approx
         },
-        jsPDF: {
-            unit: 'mm',
-            format: 'a4',
-            orientation: 'portrait'
-        }
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    // Show loading state
+    // 6. Generate
     exportPdfBtn.disabled = true;
     exportPdfBtn.textContent = '⏳...';
 
     html2pdf().set(opt).from(clone).save().then(() => {
         exportPdfBtn.disabled = false;
         exportPdfBtn.textContent = '📄 PDF';
+        // Cleanup
+        document.body.removeChild(pdfContainer);
     }).catch((err) => {
-        console.error('PDF export error:', err);
+        console.error(err);
         exportPdfBtn.disabled = false;
         exportPdfBtn.textContent = '📄 PDF';
-        alert('Errore durante l\'esportazione PDF');
+        alert("Errore PDF");
+        // Cleanup on error too
+        if (document.body.contains(pdfContainer)) document.body.removeChild(pdfContainer);
     });
 });
