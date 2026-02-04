@@ -1,7 +1,7 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 // Configuration
-const MODEL_NAME = "gemini-1.5-flash"; // Use stable 1.5 Flash
+const MODEL_NAME = "gemini-1.5-flash-001"; // Specific version to avoid 404 on v1beta
 
 exports.handler = async (event, context) => {
   // Only allow POST
