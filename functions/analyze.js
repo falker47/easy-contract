@@ -132,21 +132,21 @@ exports.handler = async (event, context) => {
   } catch (error) {
     console.error("All keys failed or fatal error:", error);
 
-    // Provide more specific error info to the user
-    const errorMsg = error.message || "Errore sconosciuto";
-    let userMsg = "Errore del server. ";
-
-    if (errorMsg.includes("429") || errorMsg.includes("quota")) {
-      userMsg = "Quota esaurita su tutte le chiavi API. Riprova più tardi.";
-    } else if (errorMsg.includes("not found")) {
-      userMsg = "Modello AI non trovato o non disponibile per questa chiave.";
-    } else {
-      userMsg += errorMsg;
-    }
+    // DEBUG MODE: Return full error details
+    const errorDetails = {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      // If it's a GoogleGenerativeAIError, it often has hidden props
+      ...error
+    };
 
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: userMsg }),
+      body: JSON.stringify({
+        error: `DEBUG ERROR: ${error.message}`,
+        details: errorDetails
+      }),
     };
   }
 };
