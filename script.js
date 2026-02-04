@@ -66,6 +66,16 @@ function handleFileSelection(fileList) {
         return;
     }
 
+    // Fallback: Check extensions if no MIME type detected (e.g. windows registry issue or weird filename)
+    const pdfByExt = files.find(f => f.name.toLowerCase().endsWith('.pdf'));
+    if (pdfByExt) {
+        if (files.length > 1 || hasExistingfiles) {
+            resetFile();
+        }
+        processFile(pdfByExt);
+        return;
+    }
+
     // If we have existing PDF, clear it before adding images
     if (currentFiles.some(f => f.type === 'application/pdf')) {
         resetFile();
