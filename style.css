@@ -499,3 +499,106 @@ h3 {
     font-size: 0.75rem;
   }
 }
+
+/* Print Styles */
+@media print {
+
+  /* Hide everything by default */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Reset body background */
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+
+  /* Show only the Results Section and its children */
+  #resultsSection,
+  #resultsSection * {
+    visibility: visible;
+  }
+
+  /* Position Results Section to fill the page */
+  #resultsSection {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0 !important;
+    padding: 20px !important;
+    background-color: white !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Hide the Action Buttons inside Results Header */
+  .header-actions {
+    display: none !important;
+  }
+
+  /* Ensure text is black and sharp */
+  .markdown-body,
+  .markdown-body p,
+  .markdown-body li,
+  .markdown-body strong,
+  .markdown-body h1,
+  .markdown-body h2,
+  .markdown-body h3,
+  .markdown-body td,
+  .markdown-body th,
+  .markdown-body pre,
+  .markdown-body code {
+    color: black !important;
+    text-shadow: none !important;
+  }
+
+  /* Improve Score visibility in print */
+  .score-container {
+    border: 1px solid #ccc !important;
+    background-color: #f9f9f9 !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
+
+  .score-label,
+  .score-value {
+    color: black !important;
+  }
+
+  /* Hide Footer and other floating elements if any remain */
+  .custom-footer,
+  .help-btn,
+  .hero,
+  .features-grid,
+  .upload-section,
+  .disclaimer-text {
+    display: none !important;
+  }
+
+  /* Add a print-only header */
+  #resultsSection::before {
+    content: "Easy Contract - Report Analisi";
+    visibility: visible;
+    display: block;
+    font-size: 20px;
+    font-weight: bold;
+    color: #1a56db;
+    border-bottom: 2px solid #1a56db;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+  }
+
+  /* Add date */
+  #resultsSection::after {
+    content: "Report generato il " attr(data-date);
+    visibility: visible;
+    display: block;
+    margin-top: 30px;
+    font-size: 10px;
+    color: #666;
+    border-top: 1px solid #ccc;
+    padding-top: 10px;
+  }
+}

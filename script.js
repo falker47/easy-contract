@@ -257,121 +257,14 @@ window.addEventListener('click', (e) => {
 });
 
 // PDF Export Logic
-// PDF Export Logic
+// PDF Export Logic (Native Print)
 const exportPdfBtn = document.getElementById('exportPdfBtn');
 
 exportPdfBtn.addEventListener('click', () => {
+    // Set current date for the print footer
     const resultsSection = document.getElementById('resultsSection');
+    resultsSection.setAttribute('data-date', new Date().toLocaleDateString('it-IT'));
 
-    // 1. Create a temporary container for the PDF content to simulate A4 width
-    // We append this to the body so styles resolve correctly
-    const pdfContainer = document.createElement('div');
-    pdfContainer.style.position = 'fixed';
-    pdfContainer.style.top = '-10000px'; // Off-screen
-    pdfContainer.style.left = '0';
-    pdfContainer.style.width = '210mm'; // A4 width
-    pdfContainer.style.backgroundColor = '#ffffff';
-    pdfContainer.style.zIndex = '-9999';
-    document.body.appendChild(pdfContainer);
-
-    // 2. Clone the content into the container
-    const clone = resultsSection.cloneNode(true);
-    pdfContainer.appendChild(clone);
-
-    // 3. Remove non-printable elements
-    const headerActions = clone.querySelector('.header-actions');
-    if (headerActions) headerActions.remove();
-
-    // 4. Force LIGHT THEME styles explicitly on the clone structure
-    clone.style.backgroundColor = '#ffffff';
-    clone.style.color = '#000000';
-    clone.style.padding = '20px 40px'; // Margins inside the A4 sheet
-    clone.style.fontFamily = 'Arial, sans-serif';
-    clone.style.border = 'none';
-
-    // Headers
-    clone.querySelectorAll('h1, h2, h3').forEach(h => {
-        h.style.color = '#1a56db'; // Blue headers
-        h.style.marginTop = '20px';
-        h.style.marginBottom = '10px';
-        h.style.textShadow = 'none'; // No shadow
-    });
-
-    // Paragraphs and text - Enforce PURE BLACK on all common text elements
-    clone.querySelectorAll('p, li, div, span, strong, td, th, blockquote, pre, code, em, b, i, u').forEach(el => {
-        el.style.color = '#000000'; // Pure black for max contrast
-        el.style.textShadow = 'none';
-    });
-
-    // Score Box specific styling
-    const scoreContainer = clone.querySelector('.score-container');
-    if (scoreContainer) {
-        scoreContainer.style.backgroundColor = '#f0f9ff';
-        scoreContainer.style.border = '1px solid #bae6fd';
-        scoreContainer.style.padding = '15px';
-        scoreContainer.style.borderRadius = '8px';
-        scoreContainer.style.marginBottom = '20px';
-        scoreContainer.style.boxShadow = 'none';
-
-        // Fix score text colors specifically
-        const scoreLabel = scoreContainer.querySelector('.score-label');
-        const scoreValue = scoreContainer.querySelector('.score-value');
-        if (scoreLabel) scoreLabel.style.color = '#000000';
-        if (scoreValue) scoreValue.style.color = '#1a56db';
-    }
-
-    // Markdown content tweaks
-    const markdownBody = clone.querySelector('.markdown-body');
-    if (markdownBody) {
-        markdownBody.style.fontSize = '12px'; // Readable print size
-        markdownBody.style.lineHeight = '1.6';
-        markdownBody.style.fontFamily = 'Arial, sans-serif';
-    }
-
-    // Add Header Branding
-    const header = document.createElement('div');
-    header.innerHTML = `
-        <div style="border-bottom: 2px solid #1a56db; margin-bottom: 20px; padding-bottom: 10px;">
-            <h1 style="color: #1a56db; font-size: 20px; margin: 0; padding: 0;">Easy Contract</h1>
-            <p style="color: #444; font-size: 10px; margin: 0; padding: 0;">Report Generato il ${new Date().toLocaleDateString('it-IT')}</p>
-        </div>
-    `;
-    clone.insertBefore(header, clone.firstChild);
-
-    // Remove old titles if redundant
-    const oldTitle = clone.querySelector('.section-title');
-    if (oldTitle) oldTitle.style.display = 'none';
-
-    // 5. Options
-    const opt = {
-        margin: [10, 10, 15, 10], // mm margins [top, left, bottom, right]
-        filename: 'Report_EasyContract.pdf',
-        image: { type: 'jpeg', quality: 1.0 }, // Max quality
-        html2canvas: {
-            scale: 4, // Higher scale for crystal clear text
-            useCORS: true,
-            scrollY: 0,
-            letterRendering: true, // Improves text kerning
-            windowWidth: 794 // A4 width in px at 96dpi approx
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    // 6. Generate
-    exportPdfBtn.disabled = true;
-    exportPdfBtn.textContent = '⏳...';
-
-    html2pdf().set(opt).from(clone).save().then(() => {
-        exportPdfBtn.disabled = false;
-        exportPdfBtn.textContent = '📄 PDF';
-        // Cleanup
-        document.body.removeChild(pdfContainer);
-    }).catch((err) => {
-        console.error(err);
-        exportPdfBtn.disabled = false;
-        exportPdfBtn.textContent = '📄 PDF';
-        alert("Errore PDF");
-        // Cleanup on error too
-        if (document.body.contains(pdfContainer)) document.body.removeChild(pdfContainer);
-    });
+    // Trigger native print
+    window.print();
 });
