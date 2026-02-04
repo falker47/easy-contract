@@ -294,11 +294,13 @@ exportPdfBtn.addEventListener('click', () => {
         h.style.color = '#1a56db'; // Blue headers
         h.style.marginTop = '20px';
         h.style.marginBottom = '10px';
+        h.style.textShadow = 'none'; // No shadow
     });
 
-    // Paragraphs and text
-    clone.querySelectorAll('p, li, div, span, strong').forEach(el => {
-        el.style.color = '#333333'; // Dark grey text
+    // Paragraphs and text - Enforce PURE BLACK on all common text elements
+    clone.querySelectorAll('p, li, div, span, strong, td, th, blockquote, pre, code, em, b, i, u').forEach(el => {
+        el.style.color = '#000000'; // Pure black for max contrast
+        el.style.textShadow = 'none';
     });
 
     // Score Box specific styling
@@ -309,6 +311,7 @@ exportPdfBtn.addEventListener('click', () => {
         scoreContainer.style.padding = '15px';
         scoreContainer.style.borderRadius = '8px';
         scoreContainer.style.marginBottom = '20px';
+        scoreContainer.style.boxShadow = 'none';
 
         // Fix score text colors specifically
         const scoreLabel = scoreContainer.querySelector('.score-label');
@@ -321,15 +324,16 @@ exportPdfBtn.addEventListener('click', () => {
     const markdownBody = clone.querySelector('.markdown-body');
     if (markdownBody) {
         markdownBody.style.fontSize = '12px'; // Readable print size
-        markdownBody.style.lineHeight = '1.5';
+        markdownBody.style.lineHeight = '1.6';
+        markdownBody.style.fontFamily = 'Arial, sans-serif';
     }
 
     // Add Header Branding
     const header = document.createElement('div');
     header.innerHTML = `
         <div style="border-bottom: 2px solid #1a56db; margin-bottom: 20px; padding-bottom: 10px;">
-            <h1 style="color: #1a56db; font-size: 20px; margin: 0;">Easy Contract</h1>
-            <p style="color: #666; font-size: 10px; margin: 0;">Report Generato il ${new Date().toLocaleDateString('it-IT')}</p>
+            <h1 style="color: #1a56db; font-size: 20px; margin: 0; padding: 0;">Easy Contract</h1>
+            <p style="color: #444; font-size: 10px; margin: 0; padding: 0;">Report Generato il ${new Date().toLocaleDateString('it-IT')}</p>
         </div>
     `;
     clone.insertBefore(header, clone.firstChild);
@@ -340,13 +344,14 @@ exportPdfBtn.addEventListener('click', () => {
 
     // 5. Options
     const opt = {
-        margin: 0,
+        margin: [10, 10, 15, 10], // mm margins [top, left, bottom, right]
         filename: 'Report_EasyContract.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
+        image: { type: 'jpeg', quality: 1.0 }, // Max quality
         html2canvas: {
-            scale: 2,
+            scale: 4, // Higher scale for crystal clear text
             useCORS: true,
             scrollY: 0,
+            letterRendering: true, // Improves text kerning
             windowWidth: 794 // A4 width in px at 96dpi approx
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
