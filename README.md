@@ -1,105 +1,111 @@
 # Easy Contract
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-ES6-F7DF1E?logo=javascript&logoColor=black)
+![Google GenAI](https://img.shields.io/badge/AI-Google%20GenAI-4285F4?logo=google&logoColor=white)
 [![Netlify Status](https://api.netlify.com/api/v1/badges/bf6e6f8f-8348-4894-b589-1960844ee7cb/deploy-status)](https://app.netlify.com/projects/easy-contract/deploys)
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![JavaScript](https://img.shields.io/badge/JavaScript-ES6-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-[![Google Gemini](https://img.shields.io/badge/AI-Google%20Gemini-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
 
-**Easy Contract** è uno strumento web per l'analisi automatica di contratti legali, alimentato dall'intelligenza artificiale di Google Gemini.
+**Easy Contract** is a small serverless experiment for turning a contract PDF or a set of page images into a structured, plain-language reading aid.
 
-Il sistema analizza file PDF o foto di contratti caricati dall'utente e fornisce un report strutturato evidenziando:
+It is **not a legal-advice service** and the generated analysis can be incomplete or wrong. The output is designed to highlight clauses, costs, dates and questions worth checking—not to decide whether a clause is legally valid or whether a user should sign.
 
-- Punteggio di sicurezza 🛡️
-- Sintesi dei vincoli principali 💡
-- Punti di attenzione e rischi ⚠️
-- Consigli operativi ⚖️
+## Current stack
 
-## 🚀 Tecnologie
+- **Frontend:** HTML, CSS and vanilla JavaScript.
+- **Backend:** Netlify Functions on Node.js 20.
+- **AI SDK:** `@google/genai` 2.23.0.
+- **Model:** `gemini-3.6-flash`.
+- **Rendering:** Marked + DOMPurify for sanitized report HTML.
+- **Export:** browser print flow for PDF output.
 
-Il progetto è costruito con un'architettura **Serverless** semplice e leggera:
+The project migrated away from the legacy `@google/generative-ai` SDK. Google currently recommends the Google GenAI SDK, and `gemini-3.6-flash` is the documented replacement for the `gemini-2.5-flash` line.
 
-- **Frontend**: HTML5, CSS3, Vanilla JavaScript. Nessun framework complesso.
-- **Backend**: [Netlify Functions](https://docs.netlify.com/functions/overview/) (Node.js) per gestire le chiamate sicure alle API.
-- **AI**: [Google Gemini API](https://ai.google.dev/) (modello `gemini-2.5-flash`).
+## What the app does
 
-## 🛠️ Prerequisiti
+1. Accepts one PDF or multiple supported images.
+2. Converts the selected files to data URLs in the browser.
+3. Sends the document payload to the Netlify Function.
+4. The function validates method, payload shape, MIME type and total encoded size.
+5. The function forwards the validated document content to the configured Gemini API.
+6. The returned Markdown is sanitized before being rendered in the browser.
+7. The user can print/export the visible report as PDF.
 
-- [Node.js](https://nodejs.org/) (v18 o superiore)
-- [Netlify CLI](https://docs.netlify.com/cli/get-started/) (`npm install -g netlify-cli`)
-- Una o più API Key di Google Gemini.
+## Data handling and privacy boundary
 
-## 📦 Installazione
+The application code does **not** persist uploaded documents to its own database or file storage.
 
-1.  **Clona la repository**:
+However, the files are **sent to Google's Gemini API for processing**. Therefore, “not stored by Easy Contract” does not mean “never leaves the browser” or “never reaches a third-party processor.” Users should avoid uploading material they are not authorized to send to an external AI service and should consult the applicable Google API terms/data-handling settings for their deployment.
 
-    ```bash
-    git clone https://github.com/falker47/easy-contract.git
-    cd easy-contract
-    ```
+API keys stay in Netlify server-side environment variables and are not returned to the browser. Server errors are intentionally sanitized so stack traces, upstream exception details and key suffixes are not exposed to clients.
 
-2.  **Installa le dipendenze**:
-    ```bash
-    npm install
-    ```
-    _Questo installerà `@google/generative-ai` necessario per le funzioni serverless._
+## Local setup
 
-## ⚙️ Configurazione
+Requirements:
+- Node.js 20+;
+- Netlify CLI;
+- a Gemini API key.
 
-Il progetto richiede le API Key di Google Gemini per funzionare. Per la sicurezza, queste **non** devono mai essere esposte nel codice frontend, ma gestite come variabili d'ambiente.
-
-### Sviluppo Locale
-
-Crea un file `.env` nella root del progetto (o usa la gestione env di Netlify CLI):
-
-```env
-# Chiave singola
-GEMINI_API_KEY=la_tua_chiave_api_qui
-
-# OPPURE Lista di chiavi (per rotazione automatica e gestione quote)
-GEMINI_API_KEYS=chiave_1,chiave_2,chiave_3
+```bash
+git clone https://github.com/falker47/easy-contract.git
+cd easy-contract
+npm install
+cp .env.example .env
 ```
 
-_Nota: La logica di backend supporta nativamente la rotazione delle chiavi se viene fornita la variabile `GEMINI_API_KEYS` separata da virgole._
+Configure either:
 
-## ▶️ Avvio in Locale
+```env
+GEMINI_API_KEY=your_key_here
+```
 
-Per avviare l'applicazione in locale simulando l'ambiente serverless di Netlify:
+or a comma-separated fallback list:
+
+```env
+GEMINI_API_KEYS=key_one,key_two
+```
+
+Then run:
 
 ```bash
 netlify dev
 ```
 
-Il sito sarà accessibile solitamente su `http://localhost:8888`. Le funzioni serverless saranno disponibili su `/.netlify/functions/analyze`.
+## Checks
 
-## 🚢 Deployment su Netlify
-
-Il progetto è pre-configurato per il deployment su Netlify grazie al file `netlify.toml`.
-
-1.  Collega la repository al tuo account Netlify.
-2.  Nelle impostazioni del sito su Netlify, vai su **Site configuration > Environment variables**.
-3.  Aggiungi le variabili d'ambiente `GEMINI_API_KEY` (o `GEMINI_API_KEYS`).
-4.  Esegui il deploy.
-
-## 📂 Struttura del Progetto
-
+```bash
+npm run check
+npm test
 ```
+
+The GitHub Actions workflow runs both commands on Node.js 20.
+
+The tests cover the serverless request boundary, including malformed JSON, unsupported MIME types, successful mocked generation and sanitization of upstream errors so secrets/debug internals are not returned to the client.
+
+## Repository structure
+
+```text
 easy-contract/
-├── functions/          # Funzioni Serverless (Backend)
-│   ├── analyze.js      # Logica principale (proxy verso Gemini)
-│   └── prompt.js       # System prompt per l'analisi legale
-├── index.html          # Interfaccia utente
-├── style.css           # Stili
-├── script.js           # Logica Frontend
-├── netlify.toml        # Configurazione Netlify
-└── package.json        # Dipendenze Node.js
+├── functions/
+│   ├── analyze.js
+│   ├── analyze.test.js
+│   └── prompt.js
+├── assets/
+├── index.html
+├── style.css
+├── script.js
+├── netlify.toml
+├── package.json
+└── .env.example
 ```
 
-## 🔒 Sicurezza
+## Operational limits
 
-- **No Upload**: I file (PDF o Immagini) vengono processati al volo convertendoli in Base64 e inviati a Gemini. Il codice attuale **non** salva i file permanentemente su disco o storage cloud.
-- **API Key Protection**: Le chiavi API risiedono solo sul server (Netlify Functions) e non sono mai esposte al client.
+- The browser currently enforces an approximate 4.5 MB aggregate source-file limit before Base64 expansion.
+- The backend independently caps encoded payload size and the number of files.
+- AI extraction can miss text, misread scans, make arithmetic mistakes or misunderstand legal language.
+- The “attention index” in the report is an AI-generated heuristic, not a legal-risk score or prediction.
+- Questions of validity, enforceability, jurisdiction or material legal consequences require professional review.
 
-## 📄 Licenza
+## License status
 
-Questo progetto è distribuito sotto licenza MIT.
+No project-wide `LICENSE` file is currently present. The previous README displayed an MIT badge and stated that the repository was MIT-licensed without the corresponding license text; that unsupported claim has been removed.
