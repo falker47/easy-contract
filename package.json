@@ -1,8 +1,16 @@
 {
   "name": "easy-contract-serverless",
-  "version": "1.0.0",
+  "version": "2.6.0",
+  "private": true,
   "description": "Serverless backend for Easy Contract",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test functions/*.test.js",
+    "check": "node --check functions/analyze.js && node --check functions/prompt.js && node --check script.js"
+  },
   "dependencies": {
-    "@google/generative-ai": "^0.21.0"
+    "@google/genai": "2.23.0"
   }
 }
