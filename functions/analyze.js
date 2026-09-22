@@ -1,161 +1,184 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleGenAI } = require("@google/genai");
 
-// Configuration
-const MODEL_NAME = "gemini-2.5-flash"; // Global setting for the model
+const MODEL_NAME = "gemini-3.6-flash";
+const MAX_FILES = 12;
+const MAX_BASE64_CHARS = 6_000_000;
+const ALLOWED_MIME_TYPES = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+]);
 
-exports.handler = async (event, context) => {
-  // Only allow POST
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
+function json(statusCode, payload) {
+  return {
+    statusCode,
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+    },
+    body: JSON.stringify(payload),
+  };
+}
+
+function getApiKeys(env = process.env) {
+  const list = (env.GEMINI_API_KEYS || "")
+    .split(",")
+    .map((key) => key.trim())
+    .filter(Boolean);
+
+  if (list.length > 0) return list;
+  return env.GEMINI_API_KEY ? [env.GEMINI_API_KEY.trim()].filter(Boolean) : [];
+}
+
+function parseFileParts(body) {
+  const rawFiles = Array.isArray(body.fileData)
+    ? body.fileData
+    : body.fileData
+      ? [body.fileData]
+      : [];
+
+  if (rawFiles.length === 0) {
+    const error = new Error("No file data provided.");
+    error.statusCode = 400;
+    throw error;
   }
 
-  // Trace execution -> Declared OUTSIDE try block to be accessible in catch
-  const logs = [];
+  if (rawFiles.length > MAX_FILES) {
+    const error = new Error(`Too many files. Maximum: ${MAX_FILES}.`);
+    error.statusCode = 400;
+    throw error;
+  }
 
-  try {
-    // 1. Get API Keys (Support lists or single key)
-    let keys = [];
+  let totalBase64Chars = 0;
+  const parts = [];
 
-    // Check for comma-separated list
-    if (process.env.GEMINI_API_KEYS) {
-      keys = process.env.GEMINI_API_KEYS.split(',').map(k => k.trim()).filter(k => k);
-    }
-    // Fallback to single key if list is empty
-    if (keys.length === 0 && process.env.GEMINI_API_KEY) {
-      keys.push(process.env.GEMINI_API_KEY);
-    }
-
-    if (keys.length === 0) {
-      console.error("No API Keys found in environment variables.");
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: "Server Configuration Error: API Key missing." })
-      };
+  for (const fileData of rawFiles) {
+    if (typeof fileData !== "string") {
+      const error = new Error("Invalid file payload.");
+      error.statusCode = 400;
+      throw error;
     }
 
-    // 2. Parse Body
-    const body = JSON.parse(event.body);
-    let fileDataArray = [];
-
-    // Support both single file (legacy/simple) and array (multi-file)
-    if (Array.isArray(body.fileData)) {
-      fileDataArray = body.fileData;
-    } else if (body.fileData) {
-      fileDataArray = [body.fileData];
+    const match = fileData.match(/^data:([^;,]+);base64,([A-Za-z0-9+/=\s]+)$/);
+    if (!match) {
+      const error = new Error("Invalid file encoding.");
+      error.statusCode = 400;
+      throw error;
     }
 
-    if (fileDataArray.length === 0) {
-      return { statusCode: 400, body: JSON.stringify({ error: "No file data provided." }) };
+    const mimeType = match[1].toLowerCase();
+    const base64Data = match[2].replace(/\s/g, "");
+
+    if (!ALLOWED_MIME_TYPES.has(mimeType)) {
+      const error = new Error(`Unsupported file type: ${mimeType}.`);
+      error.statusCode = 415;
+      throw error;
     }
 
-    // Prepare parts for Gemini
-    const parts = [];
+    totalBase64Chars += base64Data.length;
+    if (totalBase64Chars > MAX_BASE64_CHARS) {
+      const error = new Error("Payload is too large.");
+      error.statusCode = 413;
+      throw error;
+    }
 
-    // Load System Prompt
-    const systemPrompt = require("./prompt");
-    // Note: System Prompt is passed to getGenerativeModel systemInstruction
+    parts.push({
+      inlineData: {
+        data: base64Data,
+        mimeType,
+      },
+    });
+  }
 
-    for (const fileData of fileDataArray) {
-      // Extract Mime Type and Base64 Data
-      const match = fileData.match(/^data:(.+);base64,(.+)$/);
-      if (!match) {
-        console.warn("Invalid file format found, skipping one file.");
-        continue;
-      }
+  return parts;
+}
 
-      const mimeType = match[1];
-      const base64Data = match[2];
+async function generateWithKeys(parts, keys, systemPrompt, clientFactory) {
+  let lastError;
 
-      parts.push({
-        inlineData: {
-          data: base64Data,
-          mimeType: mimeType,
+  for (const key of keys) {
+    try {
+      const ai = clientFactory(key);
+      const response = await ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: [{ role: "user", parts }],
+        config: {
+          systemInstruction: systemPrompt,
+          temperature: 0,
         },
       });
-    }
 
-    if (parts.length === 0) { // Check if we have files
-      return { statusCode: 400, body: JSON.stringify({ error: "No valid files found." }) };
-    }
-
-    // 4. Loop through keys
-    let lastError = null;
-    let successResult = null;
-
-    logs.push(`Found ${keys.length} keys.`);
-
-    for (const [index, key] of keys.entries()) {
-      try {
-        logs.push(`Attempting key ${index} (ending in ...${key.slice(-4)})`);
-        console.log(`Attempting with key ending in ...${key.slice(-4)}`);
-        const genAI = new GoogleGenerativeAI(key);
-        const model = genAI.getGenerativeModel({
-          model: MODEL_NAME,
-          systemInstruction: systemPrompt, // Correct way to pass system prompt
-          generationConfig: {
-            temperature: 0.0,
-          }
-        });
-
-        logs.push("Generating content...");
-        const result = await model.generateContent(parts);
-
-        logs.push("Awaiting response...");
-        const response = await result.response;
-        successResult = response.text();
-        logs.push("Success!");
-
-        // If we get here, it worked!
-        break;
-      } catch (error) {
-        logs.push(`Error with key ${index}: ${error.message}`);
-        console.warn(`Error with key ...${key.slice(-4)}: ${error.message}`);
-        lastError = error;
-
-        // Check if it's a quota error (429) or similar.
-        if (error.message.includes("429") || error.status === 429) {
-          continue;
-        } else {
-          // Try next key regardless, but keep error
-          continue;
-        }
+      if (!response || typeof response.text !== "string" || !response.text.trim()) {
+        throw new Error("Gemini returned an empty response.");
       }
+
+      return response.text;
+    } catch (error) {
+      lastError = error;
+      console.warn("Gemini request failed; trying another configured key if available.");
     }
+  }
 
-    if (successResult) {
-      return {
-        statusCode: 200,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ result: successResult }),
-      };
-    } else {
-      // Return the actual error message for debugging if not strictly a quota issue
+  throw lastError || new Error("All Gemini requests failed.");
+}
 
-      // If lastError is null here, it means the loop finished but successResult is null AND lastError is null.
-      if (!lastError) logs.push("lastError was null after loop!?");
-
-      throw lastError || new Error("Unknown error, all keys failed.");
-    }
-
-  } catch (error) {
-    console.error("All keys failed or fatal error:", error);
-
-    // DEBUG MODE: Return full error details
-    const errorDetails = {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-      // If it's a GoogleGenerativeAIError, it often has hidden props
-      ...error
-    };
-
+async function analyzeRequest(event, options = {}) {
+  if (event.httpMethod !== "POST") {
     return {
-      statusCode: 500,
-      body: JSON.stringify({
-        error: `DEBUG ERROR: ${error.message}`,
-        details: errorDetails,
-        trace: logs // Return the execution trace
-      }),
+      statusCode: 405,
+      headers: { Allow: "POST", "Cache-Control": "no-store" },
+      body: JSON.stringify({ error: "Method Not Allowed" }),
     };
   }
+
+  const keys = getApiKeys(options.env || process.env);
+  if (keys.length === 0) {
+    console.error("Gemini API key is not configured.");
+    return json(500, { error: "Servizio temporaneamente non disponibile." });
+  }
+
+  let body;
+  try {
+    body = JSON.parse(event.body || "{}");
+  } catch {
+    return json(400, { error: "Richiesta non valida." });
+  }
+
+  let parts;
+  try {
+    parts = parseFileParts(body);
+  } catch (error) {
+    return json(error.statusCode || 400, { error: error.message });
+  }
+
+  const systemPrompt = options.systemPrompt || require("./prompt");
+  const clientFactory =
+    options.clientFactory || ((key) => new GoogleGenAI({ apiKey: key }));
+
+  try {
+    const result = await generateWithKeys(
+      parts,
+      keys,
+      systemPrompt,
+      clientFactory
+    );
+    return json(200, { result });
+  } catch (error) {
+    console.error("Gemini analysis failed:", error?.message || error);
+    return json(502, {
+      error:
+        "L'analisi AI non è riuscita. Riprova tra poco o usa un documento più leggibile.",
+    });
+  }
+}
+
+exports.handler = async (event) => analyzeRequest(event);
+exports._test = {
+  MODEL_NAME,
+  getApiKeys,
+  parseFileParts,
+  analyzeRequest,
 };
