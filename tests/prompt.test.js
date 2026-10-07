@@ -27,7 +27,7 @@ test("prompt avoids alarmist legal verdicts and signing recommendations", () => 
 test("prompt keeps report concise and verification score logic out of the generated report body", () => {
   assert.match(systemPrompt, /Optimize for scanning/i);
   assert.match(systemPrompt, /about 18 words maximum/i);
-  assert.match(systemPrompt, /about 26 words/i);
+  assert.match(systemPrompt, /(?:about|no more than) 26 words/i);
   assert.match(systemPrompt, /amount-first label/i);
   assert.match(systemPrompt, /interface renders the scale/i);
   assert.match(systemPrompt, /higher score means more issues to clarify/i);
