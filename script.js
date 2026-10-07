@@ -14,7 +14,6 @@ const loading = document.getElementById('loading');
 const resultsSection = document.getElementById('resultsSection');
 const scoreContainer = document.getElementById('scoreContainer');
 const scoreValue = document.getElementById('scoreValue');
-const scoreBand = document.getElementById('scoreBand');
 const resultsDivider = resultsSection.querySelector('.divider');
 const markdownOutput = document.getElementById('markdownOutput');
 const closeBtn = document.getElementById('closeBtn');
@@ -195,7 +194,6 @@ analyzeBtn.addEventListener('click', async () => {
 function parseAttentionIndex(markdown) {
     const lines = markdown.split(/\r?\n/);
     let score = null;
-    let band = '';
     const removable = new Set();
 
     for (let index = 0; index < lines.length; index += 1) {
@@ -210,7 +208,6 @@ function parseAttentionIndex(markdown) {
 
         if (indexMatch) {
             score = `${indexMatch[1]}/10`;
-            band = indexMatch[2] || '';
             removable.add(index);
             continue;
         }
@@ -218,7 +215,6 @@ function parseAttentionIndex(markdown) {
         const legacyScoreMatch = plainLine.match(/^Score:\s*(\d{1,2})\/10(?:\s*\(([^)]+)\))?/i);
         if (legacyScoreMatch) {
             if (!score) score = `${legacyScoreMatch[1]}/10`;
-            if (!band && legacyScoreMatch[2]) band = legacyScoreMatch[2].trim();
             removable.add(index);
             continue;
         }
@@ -239,7 +235,7 @@ function parseAttentionIndex(markdown) {
         .replace(/\n{3,}/g, '\n\n')
         .trim();
 
-    return { score, band, cleanedMarkdown };
+    return { score, cleanedMarkdown };
 }
 
 function enhanceRenderedReport() {
@@ -266,8 +262,6 @@ function renderResults(text) {
 
     if (parsed.score) {
         scoreValue.textContent = parsed.score;
-        scoreBand.textContent = parsed.band;
-        scoreBand.classList.toggle('hidden', !parsed.band);
         scoreContainer.classList.remove('hidden');
         resultsDivider.classList.remove('hidden');
     } else {
