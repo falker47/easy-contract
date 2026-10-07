@@ -1,6 +1,8 @@
-const { GoogleGenAI } = require("@google/genai");
+const { GoogleGenAI, MediaResolution } = require("@google/genai");
 
-const MODEL_NAMES = ["gemini-3.8-flash", "gemini-3.6-flash"];
+const MODEL_NAMES = ["gemini-3.5-flash-lite", "gemini-3.6-flash"];
+const MODEL_TIMEOUT_MS = 45_000;
+const MAX_OUTPUT_TOKENS = 1_200;
 const MAX_FILES = 12;
 const MAX_BASE64_CHARS = 6_000_000;
 const ALLOWED_MIME_TYPES = new Set([
@@ -152,14 +154,27 @@ async function generateWithKeys(parts, keys, systemPrompt, clientFactory) {
     const ai = clientFactory(key);
 
     for (const model of MODEL_NAMES) {
+      const startedAt = Date.now();
+
       try {
         const response = await ai.models.generateContent({
           model,
-          contents: [{ role: "user", parts }],
+          contents: [{
+            role: "user",
+            parts: [
+              { text: "Analizza il documento allegato seguendo esattamente il formato richiesto." },
+              ...parts,
+            ],
+          }],
           config: {
             systemInstruction: systemPrompt,
             thinkingConfig: {
-              thinkingLevel: "low",
+              thinkingLevel: model === "gemini-3.5-flash-lite" ? "minimal" : "low",
+            },
+            mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
+            maxOutputTokens: MAX_OUTPUT_TOKENS,
+            httpOptions: {
+              timeout: MODEL_TIMEOUT_MS,
             },
           },
         });
@@ -172,11 +187,17 @@ async function generateWithKeys(parts, keys, systemPrompt, clientFactory) {
       } catch (error) {
         lastError = error;
         const status = getUpstreamStatus(error);
+        const elapsedMs = Date.now() - startedAt;
+        const message = String(error?.message || "").toLowerCase();
+        const timedOut = /timeout|timed out|deadline/.test(message) || elapsedMs >= MODEL_TIMEOUT_MS - 1000;
+
         console.warn(
-          `Gemini request failed on ${model} (${status || "unknown"}); trying fallback when appropriate.`
+          `Gemini request failed on ${model} after ${elapsedMs}ms (${status || "unknown"}).`
         );
 
-        if (status === 401 || status === 403 || status === 429) {
+        // Preserve enough headroom under Netlify's hard 60s synchronous limit.
+        // Only try the fallback when the first failure was fast.
+        if (timedOut || elapsedMs > 15_000 || status === 401 || status === 403 || status === 429) {
           break;
         }
       }
@@ -237,6 +258,8 @@ async function analyzeRequest(event, options = {}) {
 exports.handler = async (event) => analyzeRequest(event);
 exports._test = {
   MODEL_NAMES,
+  MODEL_TIMEOUT_MS,
+  MAX_OUTPUT_TOKENS,
   getApiKeys,
   getUpstreamStatus,
   publicUpstreamError,
