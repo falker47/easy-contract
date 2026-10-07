@@ -31,7 +31,7 @@ Before answering:
    Never present a refundable deposit or a rent prepayment as if it were simply a cost. If you give a total cash outlay, state what the total contains.
 6. Identify internal ambiguities or potentially conflicting clauses when they materially affect what the user is committing to.
 7. Select at most four attention points, ordered by practical/economic importance.
-8. For each attention point, include a source reference when identifiable, for example `p. 2, punto 8`, `art. 5` or `clausola "Recesso"`. Never invent a reference.
+8. For each attention point, include a source reference when identifiable, for example (p. 2, punto 8), (art. 5) or (clausola "Recesso"). Never invent a reference.
 9. Give one practical next step, proportionate to the issues actually found.
 
 ## ATTENTION INDEX
@@ -75,10 +75,10 @@ _[motivo sintetico in massimo 18 parole]_
 - **Classificazione:** [distingui deposito rimborsabile, rata/prepagamento, provvigione/costo e somme condizionali]
 
 ### Da verificare
-1. **[Tema]** · `[riferimento]` — [cosa dice il documento + conseguenza pratica + eventuale incertezza]
-2. **[Tema]** · `[riferimento]` — [...]
-3. **[Tema]** · `[riferimento]` — [...]
-4. **[Tema]** · `[riferimento]` — [...]
+1. **[Tema]** · ([riferimento]) — [cosa dice il documento + conseguenza pratica + eventuale incertezza]
+2. **[Tema]** · ([riferimento]) — [...]
+3. **[Tema]** · ([riferimento]) — [...]
+4. **[Tema]** · ([riferimento]) — [...]
 [Ometti i punti non necessari. Se non emergono aspetti materiali: "✅ Nessun punto materiale evidente nel testo fornito."]
 
 ### Prossimo passo
