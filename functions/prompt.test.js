@@ -23,5 +23,6 @@ test("prompt avoids alarmist legal verdicts and signing recommendations", () => 
 
 test("prompt keeps score logic out of the generated report body", () => {
   assert.match(systemPrompt, /interface renders the scale separately/i);
+  assert.match(systemPrompt, /Indice di attenzione: \[VOTO\]\/10/);
   assert.doesNotMatch(systemPrompt, /Logica Voti/i);
 });
