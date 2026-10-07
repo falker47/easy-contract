@@ -291,19 +291,24 @@ function enhanceRenderedReport() {
                 );
 
                 if (breakdownItem) {
-                    breakdownItem.classList.add('money-breakdown');
-
-                    const breakdownTitle = breakdownItem.querySelector(':scope > strong');
-                    if (breakdownTitle) {
-                        breakdownTitle.classList.add('amount-classification-title');
-                        addReportIcon(breakdownTitle, 'categories');
-                    }
-
                     const moneyGrid = breakdownItem.querySelector(':scope > ul');
                     const count = moneyGrid?.children.length || 0;
 
                     if (moneyGrid) {
-                        moneyGrid.classList.add('money-grid', `money-count-${Math.min(count, 6)}`);
+                        const classificationHeading = document.createElement('h3');
+                        classificationHeading.className = 'report-heading report-heading-categories';
+                        classificationHeading.textContent = 'Come sono classificate le somme';
+                        addReportIcon(classificationHeading, 'categories');
+
+                        moneyGrid.classList.add(
+                            'money-grid',
+                            'report-money-classifications',
+                            `money-count-${Math.min(count, 6)}`
+                        );
+
+                        nextElement.insertAdjacentElement('afterend', classificationHeading);
+                        classificationHeading.insertAdjacentElement('afterend', moneyGrid);
+                        breakdownItem.remove();
                     }
                 }
             }
