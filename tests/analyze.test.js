@@ -75,7 +75,7 @@ test("returns model text on success", async () => {
       clientFactory: () => ({
         models: {
           generateContent: async ({ model }) => {
-            assert.equal(model, "gemini-3.6-flash");
+            assert.equal(model, "gemini-3.8-flash");
             return { text: "ok" };
           },
         },
@@ -85,4 +85,63 @@ test("returns model text on success", async () => {
 
   assert.equal(response.statusCode, 200);
   assert.deepEqual(JSON.parse(response.body), { result: "ok" });
+});
+
+
+test("falls back to the previous stable Gemini model when the primary model fails", async () => {
+  const attemptedModels = [];
+
+  const response = await _test.analyzeRequest(
+    {
+      httpMethod: "POST",
+      body: JSON.stringify({ fileData: tinyPdf }),
+    },
+    {
+      env: { GEMINI_API_KEY: "test-key" },
+      systemPrompt: "test prompt",
+      clientFactory: () => ({
+        models: {
+          generateContent: async ({ model }) => {
+            attemptedModels.push(model);
+            if (model === "gemini-3.8-flash") {
+              const error = new Error("temporary upstream failure");
+              error.status = 503;
+              throw error;
+            }
+            return { text: "fallback ok" };
+          },
+        },
+      }),
+    }
+  );
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(JSON.parse(response.body), { result: "fallback ok" });
+  assert.deepEqual(attemptedModels, ["gemini-3.8-flash", "gemini-3.6-flash"]);
+});
+
+test("maps Gemini quota errors to a safe 429 response", async () => {
+  const response = await _test.analyzeRequest(
+    {
+      httpMethod: "POST",
+      body: JSON.stringify({ fileData: tinyPdf }),
+    },
+    {
+      env: { GEMINI_API_KEY: "test-key" },
+      clientFactory: () => ({
+        models: {
+          generateContent: async () => {
+            const error = new Error("RESOURCE_EXHAUSTED quota");
+            error.status = 429;
+            throw error;
+          },
+        },
+      }),
+    }
+  );
+
+  assert.equal(response.statusCode, 429);
+  assert.deepEqual(JSON.parse(response.body), {
+    error: "Il servizio AI ha raggiunto un limite temporaneo. Riprova tra poco.",
+  });
 });
