@@ -252,22 +252,48 @@ function enhanceRenderedReport() {
         const title = heading.textContent.trim().toLowerCase();
         const nextElement = heading.nextElementSibling;
 
-        if (!nextElement) return;
+        heading.classList.add('report-heading');
 
-        if ((title === 'sintesi' || title === 'in sintesi') && nextElement.tagName === 'UL') {
-            nextElement.classList.add('summary-grid');
+        if (title === 'sintesi' || title === 'in sintesi') {
+            heading.classList.add('report-heading-summary');
+            if (nextElement?.tagName === 'UL') {
+                nextElement.classList.add('summary-grid');
+            }
         }
 
-        if (title === 'impatto economico' && nextElement.tagName === 'UL') {
-            nextElement.classList.add('economic-grid');
+        if (title === 'impatto economico') {
+            heading.classList.add('report-heading-money');
+            if (nextElement?.tagName === 'UL') {
+                nextElement.classList.add('economic-grid');
+
+                const breakdownItem = Array.from(nextElement.children).find((item) =>
+                    item.querySelector(':scope > ul')
+                );
+
+                if (breakdownItem) {
+                    breakdownItem.classList.add('money-breakdown');
+                    const moneyGrid = breakdownItem.querySelector(':scope > ul');
+                    const count = moneyGrid?.children.length || 0;
+
+                    if (moneyGrid) {
+                        moneyGrid.classList.add('money-grid', `money-count-${Math.min(count, 6)}`);
+                    }
+                }
+            }
         }
 
-        if ((title === 'da verificare' || title === 'punti da verificare') && ['OL', 'UL'].includes(nextElement.tagName)) {
-            nextElement.classList.add('attention-list');
+        if (title === 'da verificare' || title === 'punti da verificare') {
+            heading.classList.add('report-heading-check');
+            if (nextElement && ['OL', 'UL'].includes(nextElement.tagName)) {
+                nextElement.classList.add('attention-list');
+            }
         }
 
-        if (title === 'prossimo passo' && nextElement.tagName === 'P') {
-            nextElement.classList.add('next-step');
+        if (title === 'prossimo passo') {
+            heading.classList.add('report-heading-next');
+            if (nextElement?.tagName === 'P') {
+                nextElement.classList.add('next-step');
+            }
         }
     });
 }
