@@ -56,8 +56,8 @@ body:not(.has-results) .container {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding-top: 1.25rem;
-  padding-bottom: clamp(4.5rem, 8vh, 6.5rem);
+  padding-top: 1rem;
+  padding-bottom: clamp(4.25rem, 7vh, 5.75rem);
 }
 
 /* Hero */
@@ -87,6 +87,19 @@ body:not(.has-results) .container {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.65rem;
   margin: 1rem 0 1.05rem;
+}
+
+body:not(.has-results) .features-grid {
+  margin-top: 2.15rem;
+  margin-bottom: 1.35rem;
+}
+
+body:not(.has-results) .upload-section {
+  margin-bottom: 1.05rem;
+}
+
+body:not(.has-results) .disclaimer-text {
+  margin-top: 0.95rem;
 }
 
 .feature-card {
@@ -757,6 +770,15 @@ button:focus-visible,
   .features-grid {
     gap: 0.35rem;
     margin: 0.7rem 0;
+  }
+
+  body:not(.has-results) .features-grid {
+    margin-top: 1.35rem;
+    margin-bottom: 0.9rem;
+  }
+
+  body:not(.has-results) .upload-section {
+    margin-bottom: 0.75rem;
   }
 
   .feature-card {
