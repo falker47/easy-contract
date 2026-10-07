@@ -1,7 +1,10 @@
 const { GoogleGenAI, MediaResolution } = require("@google/genai");
 
 const MODEL_NAMES = ["gemini-3.5-flash-lite", "gemini-3.6-flash"];
-const MODEL_TIMEOUT_MS = 45_000;
+const FUNCTION_BUDGET_MS = 52_000;
+const MAX_ATTEMPT_TIMEOUT_MS = 28_000;
+const RESPONSE_HEADROOM_MS = 4_000;
+const MIN_ATTEMPT_TIMEOUT_MS = 5_000;
 const MAX_OUTPUT_TOKENS = 1_200;
 const MAX_FILES = 12;
 const MAX_BASE64_CHARS = 6_000_000;
@@ -134,7 +137,12 @@ function publicUpstreamError(error) {
     };
   }
 
-  if (status === 408 || status === 504 || /timeout|timed out/.test(message)) {
+  if (
+    status === 408 ||
+    status === 504 ||
+    error?.name === "AbortError" ||
+    /timeout|timed out|aborted/.test(message)
+  ) {
     return {
       statusCode: 504,
       message: "L'analisi AI ha impiegato troppo tempo. Riprova tra poco.",
@@ -149,11 +157,23 @@ function publicUpstreamError(error) {
 
 async function generateWithKeys(parts, keys, systemPrompt, clientFactory) {
   let lastError;
+  const deadline = Date.now() + FUNCTION_BUDGET_MS;
 
+  outer:
   for (const key of keys) {
     const ai = clientFactory(key);
 
     for (const model of MODEL_NAMES) {
+      const remainingMs = deadline - Date.now();
+      const attemptTimeoutMs = Math.min(
+        MAX_ATTEMPT_TIMEOUT_MS,
+        remainingMs - RESPONSE_HEADROOM_MS
+      );
+
+      if (attemptTimeoutMs < MIN_ATTEMPT_TIMEOUT_MS) break outer;
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), attemptTimeoutMs);
       const startedAt = Date.now();
 
       try {
@@ -173,8 +193,9 @@ async function generateWithKeys(parts, keys, systemPrompt, clientFactory) {
             },
             mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
             maxOutputTokens: MAX_OUTPUT_TOKENS,
+            abortSignal: controller.signal,
             httpOptions: {
-              timeout: MODEL_TIMEOUT_MS,
+              timeout: attemptTimeoutMs,
             },
           },
         });
@@ -185,21 +206,31 @@ async function generateWithKeys(parts, keys, systemPrompt, clientFactory) {
 
         return response.text;
       } catch (error) {
-        lastError = error;
         const status = getUpstreamStatus(error);
         const elapsedMs = Date.now() - startedAt;
         const message = String(error?.message || "").toLowerCase();
-        const timedOut = /timeout|timed out|deadline/.test(message) || elapsedMs >= MODEL_TIMEOUT_MS - 1000;
+        const timedOut =
+          controller.signal.aborted ||
+          error?.name === "AbortError" ||
+          /timeout|timed out|deadline|aborted/.test(message) ||
+          elapsedMs >= attemptTimeoutMs - 1000;
+
+        lastError = timedOut
+          ? Object.assign(new Error("timeout"), { status: 504 })
+          : error;
 
         console.warn(
           `Gemini request failed on ${model} after ${elapsedMs}ms (${status || "unknown"}).`
         );
 
-        // Preserve enough headroom under Netlify's hard 60s synchronous limit.
-        // Only try the fallback when the first failure was fast.
-        if (timedOut || elapsedMs > 15_000 || status === 401 || status === 403 || status === 429) {
+        // Authentication/quota errors are key-specific: move to the next key.
+        // Timeouts and transient failures may still succeed on the fallback model,
+        // while the global deadline keeps the whole function under Netlify's 60s cap.
+        if (status === 401 || status === 403 || status === 429) {
           break;
         }
+      } finally {
+        clearTimeout(timeoutId);
       }
     }
   }
@@ -258,7 +289,8 @@ async function analyzeRequest(event, options = {}) {
 exports.handler = async (event) => analyzeRequest(event);
 exports._test = {
   MODEL_NAMES,
-  MODEL_TIMEOUT_MS,
+  FUNCTION_BUDGET_MS,
+  MAX_ATTEMPT_TIMEOUT_MS,
   MAX_OUTPUT_TOKENS,
   getApiKeys,
   getUpstreamStatus,

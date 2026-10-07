@@ -1,6 +1,6 @@
 {
   "name": "easy-contract-serverless",
-  "version": "2.10.2",
+  "version": "2.11.1",
   "private": true,
   "description": "Serverless backend for Easy Contract",
   "engines": {
