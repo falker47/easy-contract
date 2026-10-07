@@ -332,6 +332,39 @@ function enhanceRenderedReport() {
     });
 }
 
+function updateReportLayout() {
+    markdownOutput.classList.remove('report-stacked');
+
+    if (window.matchMedia('(max-width: 680px)').matches) return;
+
+    const summaryGrid = markdownOutput.querySelector('.summary-grid');
+    const economicGrid = markdownOutput.querySelector('.economic-grid');
+
+    if (!summaryGrid || !economicGrid) return;
+
+    const summaryHeight = summaryGrid.getBoundingClientRect().height;
+    const economicHeight = economicGrid.getBoundingClientRect().height;
+    const shorterHeight = Math.max(1, Math.min(summaryHeight, economicHeight));
+    const heightDelta = Math.abs(summaryHeight - economicHeight);
+    const heightRatio = Math.max(summaryHeight, economicHeight) / shorterHeight;
+
+    const shouldStack = heightDelta > 96 && heightRatio > 1.28;
+    markdownOutput.classList.toggle('report-stacked', shouldStack);
+}
+
+let reportLayoutFrame = null;
+
+function scheduleReportLayoutUpdate() {
+    if (reportLayoutFrame !== null) {
+        cancelAnimationFrame(reportLayoutFrame);
+    }
+
+    reportLayoutFrame = requestAnimationFrame(() => {
+        reportLayoutFrame = null;
+        updateReportLayout();
+    });
+}
+
 function renderResults(text) {
     const parsed = parseAttentionIndex(text);
 
@@ -351,6 +384,7 @@ function renderResults(text) {
     document.body.classList.add('has-results');
     resultsSection.classList.remove('hidden');
     requestAnimationFrame(() => {
+        updateReportLayout();
         resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 }
@@ -381,6 +415,8 @@ window.addEventListener('keydown', (event) => {
         helpModal.classList.add('hidden');
     }
 });
+
+window.addEventListener('resize', scheduleReportLayoutUpdate);
 
 exportPdfBtn.addEventListener('click', () => {
     resultsSection.setAttribute('data-date', new Date().toLocaleDateString('it-IT'));
