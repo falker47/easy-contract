@@ -46,7 +46,7 @@ test("sanitizes upstream errors and never returns key suffixes or stack traces",
       clientFactory: () => ({
         models: {
           generateContent: async () => {
-            const err = new Error("quota failure for secret 2222");
+            const err = new Error("upstream failure for secret 2222");
             err.stack = "STACK_WITH_SECRET_2222";
             throw err;
           },
@@ -60,7 +60,7 @@ test("sanitizes upstream errors and never returns key suffixes or stack traces",
     error:
       "L'analisi AI non è riuscita. Riprova tra poco o usa un documento più leggibile.",
   });
-  assert.doesNotMatch(response.body, /1111|2222|STACK|quota/i);
+  assert.doesNotMatch(response.body, /1111|2222|STACK|upstream/i);
 });
 
 test("returns model text on success", async () => {
