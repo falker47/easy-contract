@@ -78,7 +78,8 @@ test("returns model text on success", async () => {
             assert.equal(model, "gemini-3.5-flash-lite");
             assert.equal(config.thinkingConfig.thinkingLevel, "minimal");
             assert.equal(config.maxOutputTokens, 1200);
-            assert.equal(config.httpOptions.timeout, 45000);
+            assert.equal(config.httpOptions.timeout, 28000);
+            assert.ok(config.abortSignal);
             assert.ok(config.mediaResolution);
             assert.equal(contents[0].parts[0].text, "Analizza il documento allegato seguendo esattamente il formato richiesto.");
             return { text: "ok" };
@@ -152,39 +153,45 @@ test("maps Gemini quota errors to a safe 429 response", async () => {
 });
 
 
-test("does not start a fallback after a slow timeout-like failure", async () => {
-  const attemptedModels = [];
+test("keeps Gemini attempts below the platform limit and falls back after timeout", async () => {
+  const attempted = [];
 
-  const originalNow = Date.now;
-  let now = 0;
-  Date.now = () => {
-    now += 46_000;
-    return now;
-  };
+  const response = await _test.analyzeRequest(
+    {
+      httpMethod: "POST",
+      body: JSON.stringify({ fileData: tinyPdf }),
+    },
+    {
+      env: { GEMINI_API_KEY: "test-key" },
+      systemPrompt: "test prompt",
+      clientFactory: () => ({
+        models: {
+          generateContent: async ({ model, config }) => {
+            attempted.push({
+              model,
+              timeout: config.httpOptions.timeout,
+              hasAbortSignal: Boolean(config.abortSignal),
+            });
 
-  try {
-    const response = await _test.analyzeRequest(
-      {
-        httpMethod: "POST",
-        body: JSON.stringify({ fileData: tinyPdf }),
-      },
-      {
-        env: { GEMINI_API_KEY: "test-key" },
-        systemPrompt: "test prompt",
-        clientFactory: () => ({
-          models: {
-            generateContent: async ({ model }) => {
-              attemptedModels.push(model);
+            if (model === "gemini-3.5-flash-lite") {
               throw new Error("timeout");
-            },
-          },
-        }),
-      }
-    );
+            }
 
-    assert.equal(response.statusCode, 504);
-    assert.deepEqual(attemptedModels, ["gemini-3.5-flash-lite"]);
-  } finally {
-    Date.now = originalNow;
-  }
+            return { text: "fallback ok" };
+          },
+        },
+      }),
+    }
+  );
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(JSON.parse(response.body), { result: "fallback ok" });
+  assert.deepEqual(
+    attempted.map((item) => item.model),
+    ["gemini-3.5-flash-lite", "gemini-3.6-flash"]
+  );
+  assert.ok(attempted.every((item) => item.timeout <= 28_000));
+  assert.ok(attempted.every((item) => item.hasAbortSignal));
+  assert.equal(_test.FUNCTION_BUDGET_MS, 52_000);
+  assert.equal(_test.MAX_ATTEMPT_TIMEOUT_MS, 28_000);
 });
