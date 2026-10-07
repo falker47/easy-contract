@@ -210,7 +210,7 @@ function parseAttentionIndex(markdown) {
             .trim();
 
         const indexMatch = plainLine.match(
-            /^Indice di attenzione:\s*(\d{1,2})\/10(?:\s*[—-]\s*(Basso|Medio|Alto|Molto alto))?/i
+            /(?:Necessità di verifica|Indice di attenzione):\s*(\d{1,2})\/10(?:\s*[—-]\s*([^\n]+))?/i
         );
 
         if (indexMatch) {
@@ -254,12 +254,20 @@ function enhanceRenderedReport() {
 
         if (!nextElement) return;
 
-        if ((title === 'sintesi' || title === 'in sintesi' || title === 'impatto economico') && nextElement.tagName === 'UL') {
-            nextElement.classList.add('compact-facts');
+        if ((title === 'sintesi' || title === 'in sintesi') && nextElement.tagName === 'UL') {
+            nextElement.classList.add('summary-grid');
+        }
+
+        if (title === 'impatto economico' && nextElement.tagName === 'UL') {
+            nextElement.classList.add('economic-grid');
         }
 
         if ((title === 'da verificare' || title === 'punti da verificare') && ['OL', 'UL'].includes(nextElement.tagName)) {
             nextElement.classList.add('attention-list');
+        }
+
+        if (title === 'prossimo passo' && nextElement.tagName === 'P') {
+            nextElement.classList.add('next-step');
         }
     });
 }
