@@ -174,13 +174,13 @@ analyzeBtn.addEventListener('click', async () => {
                         errorMessage += `: ${errData.error}`;
                     }
                 } catch {
-                    if (responseText.includes('Task timed out')) {
-                        errorMessage += ': timeout durante l\'analisi.';
-                    } else {
-                        const compactText = responseText.replace(/\s+/g, ' ').trim();
-                        if (compactText) {
-                            errorMessage += `: ${compactText.substring(0, 140)}`;
-                        }
+                    const compactText = responseText.replace(/\s+/g, ' ').trim();
+                    const looksLikeHtml = /^<!?html|^<html|<title>.*timeout/i.test(compactText);
+
+                    if (response.status === 504 || /Task timed out|Inactivity Timeout/i.test(responseText)) {
+                        errorMessage = "Timeout del servizio AI. Riprova tra poco.";
+                    } else if (!looksLikeHtml && compactText) {
+                        errorMessage += `: ${compactText.substring(0, 140)}`;
                     }
                 }
             }
