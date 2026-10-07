@@ -12,17 +12,19 @@ test("prompt keeps analysis evidence-bound and classifies money", () => {
   assert.match(systemPrompt, /Never double-count the same amount/i);
   assert.match(systemPrompt, /source reference when identifiable/i);
   assert.match(systemPrompt, /at most four points to verify/i);
+  assert.match(systemPrompt, /acceptance\/notification trigger/i);
 });
 
 test("prompt avoids alarmist legal verdicts and signing recommendations", () => {
-  assert.match(systemPrompt, /NOT:/i);
+  assert.match(systemPrompt, /The score is NOT:/i);
   assert.match(systemPrompt, /Never use labels such as "truffa", "illegale", "trappola", "molto rischioso", "equità" or "impeccabile"/i);
   assert.match(systemPrompt, /Do not recommend signing or not signing/i);
   assert.match(systemPrompt, /Titles must be descriptive and neutral/i);
 });
 
 test("prompt keeps verification score logic out of the generated report body", () => {
-  assert.match(systemPrompt, /interface renders the scale/i);\n  assert.match(systemPrompt, /higher score means more issues to clarify/i);
-  assert.match(systemPrompt, /Indice di attenzione: \[VOTO\]\/10/);
+  assert.match(systemPrompt, /interface renders the scale/i);
+  assert.match(systemPrompt, /higher score means more issues to clarify/i);
+  assert.match(systemPrompt, /Necessità di verifica: \[VOTO\]\/10/);
   assert.doesNotMatch(systemPrompt, /Logica Voti/i);
 });
