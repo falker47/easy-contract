@@ -19,3 +19,17 @@ test('results expose the approved compact report shell', () => {
   assert.match(html, /id="scoreContainer" class="score-container hidden"/);
   assert.match(html, /id="markdownOutput" class="markdown-body"/);
 });
+
+
+test('adapts the report when top sections are materially imbalanced', () => {
+  const script = fs.readFileSync(path.join(__dirname, '..', 'script.js'), 'utf8');
+  const css = fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8');
+
+  assert.match(script, /function updateReportLayout\(\)/);
+  assert.match(script, /getBoundingClientRect\(\)\.height/);
+  assert.match(script, /heightDelta > 96 && heightRatio > 1\.28/);
+  assert.match(script, /classList\.toggle\('report-stacked', shouldStack\)/);
+  assert.match(script, /addEventListener\('resize', scheduleReportLayoutUpdate\)/);
+  assert.match(css, /\.markdown-body\.report-stacked/);
+  assert.match(css, /\.markdown-body\.report-stacked \.summary-grid[\s\S]*repeat\(3, minmax\(0, 1fr\)\)/);
+});
