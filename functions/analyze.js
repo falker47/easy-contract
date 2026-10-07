@@ -158,7 +158,9 @@ async function generateWithKeys(parts, keys, systemPrompt, clientFactory) {
           contents: [{ role: "user", parts }],
           config: {
             systemInstruction: systemPrompt,
-            temperature: 0,
+            thinkingConfig: {
+              thinkingLevel: "low",
+            },
           },
         });
 
