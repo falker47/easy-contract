@@ -75,7 +75,7 @@ Never use labels such as "truffa", "illegale", "trappola", "molto rischioso", "e
 ## OUTPUT FORMAT
 Respond only with this structure:
 
-🧭 **Indice di attenzione: [VOTO]/10 — [Basso|Medio|Alto|Molto alto]**
+🧭 **Indice di attenzione: [VOTO]/10**
 
 ### In sintesi
 - **Oggetto:** [cosa disciplina il documento]
