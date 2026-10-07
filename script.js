@@ -5,6 +5,7 @@ const cameraInput = document.getElementById('cameraInput');
 const cameraBtn = document.getElementById('cameraBtn');
 const dropZone = document.getElementById('dropZone');
 const uploadSection = document.getElementById('uploadSection');
+const uploadIdle = document.getElementById('uploadIdle');
 const fileInfo = document.getElementById('fileInfo');
 const fileNameSpan = document.getElementById('fileName');
 const removeFileBtn = document.getElementById('removeFile');
@@ -14,7 +15,6 @@ const resultsSection = document.getElementById('resultsSection');
 const scoreContainer = document.getElementById('scoreContainer');
 const scoreValue = document.getElementById('scoreValue');
 const scoreBand = document.getElementById('scoreBand');
-const scoreReason = document.getElementById('scoreReason');
 const resultsDivider = resultsSection.querySelector('.divider');
 const markdownOutput = document.getElementById('markdownOutput');
 const closeBtn = document.getElementById('closeBtn');
@@ -58,8 +58,7 @@ function handleFileSelection(fileList) {
 
     if (hasPdf) {
         if (files.length > 1 || hasExistingFiles) resetFile();
-        const pdf = files.find((file) => file.type === 'application/pdf');
-        processFile(pdf);
+        processFile(files.find((file) => file.type === 'application/pdf'));
         return;
     }
 
@@ -87,6 +86,8 @@ function handleFileSelection(fileList) {
 }
 
 function processFile(file) {
+    if (!file) return;
+
     const currentTotalSize = currentFiles.reduce((total, item) => total + (item.size || 0), 0);
     const maxSize = 4.5 * 1024 * 1024;
 
@@ -138,12 +139,19 @@ function resetFile() {
     updateUI();
 }
 
+function setAnalyzing(isAnalyzing) {
+    uploadSection.classList.toggle('is-analyzing', isAnalyzing);
+    uploadIdle.classList.toggle('hidden', isAnalyzing);
+    loading.classList.toggle('hidden', !isAnalyzing);
+    analyzeBtn.disabled = isAnalyzing || currentFiles.length === 0;
+}
+
 analyzeBtn.addEventListener('click', async () => {
     if (currentFiles.length === 0) return;
 
-    analyzeBtn.disabled = true;
-    loading.classList.remove('hidden');
+    document.body.classList.remove('has-results');
     resultsSection.classList.add('hidden');
+    setAnalyzing(true);
 
     const payload = {
         fileData: currentFiles.map((file) => file.base64)
@@ -180,8 +188,7 @@ analyzeBtn.addEventListener('click', async () => {
         console.error(error);
         alert(`Errore durante l'analisi: ${error.message}`);
     } finally {
-        loading.classList.add('hidden');
-        analyzeBtn.disabled = false;
+        setAnalyzing(false);
     }
 });
 
@@ -189,41 +196,36 @@ function parseAttentionIndex(markdown) {
     const lines = markdown.split(/\r?\n/);
     let score = null;
     let band = '';
-    let reason = '';
-    let scoreLineIndex = -1;
-    let reasonLineIndex = -1;
+    const removable = new Set();
 
     for (let index = 0; index < lines.length; index += 1) {
         const plainLine = lines[index]
             .replace(/\*\*/g, '')
-            .replace(/^\s*🧭\s*/, '')
+            .replace(/^\s*[🧭🛡️]\s*/, '')
             .trim();
 
-        const match = plainLine.match(
-            /^Indice di attenzione:\s*(\d{1,2})\/10\s*[—-]\s*(.+)$/i
+        const indexMatch = plainLine.match(
+            /^Indice di attenzione:\s*(\d{1,2})\/10(?:\s*[—-]\s*(Basso|Medio|Alto|Molto alto))?/i
         );
 
-        if (!match) continue;
-
-        score = `${match[1]}/10`;
-        band = match[2].trim();
-        scoreLineIndex = index;
-
-        for (let next = index + 1; next < lines.length; next += 1) {
-            if (!lines[next].trim()) continue;
-
-            if (/^\s*[_*].+[_*]\s*$/.test(lines[next])) {
-                reason = lines[next]
-                    .trim()
-                    .replace(/^[_*]+/, '')
-                    .replace(/[_*]+$/, '')
-                    .trim();
-                reasonLineIndex = next;
-            }
-            break;
+        if (indexMatch) {
+            score = `${indexMatch[1]}/10`;
+            band = indexMatch[2] || '';
+            removable.add(index);
+            continue;
         }
 
-        break;
+        const legacyScoreMatch = plainLine.match(/^Score:\s*(\d{1,2})\/10(?:\s*\(([^)]+)\))?/i);
+        if (legacyScoreMatch) {
+            if (!score) score = `${legacyScoreMatch[1]}/10`;
+            if (!band && legacyScoreMatch[2]) band = legacyScoreMatch[2].trim();
+            removable.add(index);
+            continue;
+        }
+
+        if (/Logica\s+Voti/i.test(plainLine)) {
+            removable.add(index);
+        }
     }
 
     if (!score) {
@@ -232,11 +234,12 @@ function parseAttentionIndex(markdown) {
     }
 
     const cleanedMarkdown = lines
-        .filter((_, index) => index !== scoreLineIndex && index !== reasonLineIndex)
+        .filter((_, index) => !removable.has(index))
         .join('\n')
-        .replace(/^\s+/, '');
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
 
-    return { score, band, reason, cleanedMarkdown };
+    return { score, band, cleanedMarkdown };
 }
 
 function enhanceRenderedReport() {
@@ -248,11 +251,11 @@ function enhanceRenderedReport() {
 
         if (!nextElement) return;
 
-        if ((title === 'sintesi' || title === 'soldi') && nextElement.tagName === 'UL') {
+        if ((title === 'sintesi' || title === 'in sintesi' || title === 'impatto economico') && nextElement.tagName === 'UL') {
             nextElement.classList.add('compact-facts');
         }
 
-        if (title === 'da verificare' && ['OL', 'UL'].includes(nextElement.tagName)) {
+        if ((title === 'da verificare' || title === 'punti da verificare') && ['OL', 'UL'].includes(nextElement.tagName)) {
             nextElement.classList.add('attention-list');
         }
     });
@@ -264,16 +267,9 @@ function renderResults(text) {
     if (parsed.score) {
         scoreValue.textContent = parsed.score;
         scoreBand.textContent = parsed.band;
+        scoreBand.classList.toggle('hidden', !parsed.band);
         scoreContainer.classList.remove('hidden');
         resultsDivider.classList.remove('hidden');
-
-        if (parsed.reason) {
-            scoreReason.textContent = parsed.reason;
-            scoreReason.classList.remove('hidden');
-        } else {
-            scoreReason.textContent = '';
-            scoreReason.classList.add('hidden');
-        }
     } else {
         scoreContainer.classList.add('hidden');
         resultsDivider.classList.add('hidden');
@@ -283,12 +279,16 @@ function renderResults(text) {
     markdownOutput.innerHTML = DOMPurify.sanitize(rawHtml);
     enhanceRenderedReport();
 
+    document.body.classList.add('has-results');
     resultsSection.classList.remove('hidden');
-    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    requestAnimationFrame(() => {
+        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
 }
 
 closeBtn.addEventListener('click', () => {
     resultsSection.classList.add('hidden');
+    document.body.classList.remove('has-results');
     resetFile();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 });
