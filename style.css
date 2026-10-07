@@ -429,12 +429,6 @@ body.has-results .subtitle {
   font-variant-numeric: tabular-nums;
 }
 
-.score-band {
-  color: #d6f3ff;
-  font-size: 0.84rem;
-  font-weight: 700;
-}
-
 .score-scale {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -832,7 +826,6 @@ button:focus-visible,
 
   .score-label,
   .score-value,
-  .score-band,
   .score-scale,
   .markdown-body,
   .markdown-body p,
