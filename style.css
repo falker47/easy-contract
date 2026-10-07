@@ -583,6 +583,31 @@ body.has-results .home-layout {
   line-height: 1.45;
 }
 
+.markdown-body.report-stacked {
+  display: block;
+}
+
+.markdown-body.report-stacked .report-heading-money,
+.markdown-body.report-stacked .report-heading-check,
+.markdown-body.report-stacked .report-heading-next {
+  margin-top: 1.2rem !important;
+  padding-top: 1.05rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.markdown-body.report-stacked .summary-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.markdown-body.report-stacked .summary-grid > li {
+  display: block;
+}
+
+.markdown-body.report-stacked .summary-grid > li > strong {
+  display: block;
+  margin-bottom: 0.18rem;
+}
+
 .markdown-body h1,
 .markdown-body h2,
 .markdown-body h3 { color: #e6f7ff; }
