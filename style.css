@@ -588,6 +588,7 @@ body.has-results .home-layout {
 }
 
 .markdown-body.report-stacked .report-heading-money,
+.markdown-body.report-stacked .report-heading-categories,
 .markdown-body.report-stacked .report-heading-check,
 .markdown-body.report-stacked .report-heading-next {
   margin-top: 1.2rem !important;
@@ -629,7 +630,7 @@ body.has-results .home-layout {
 .report-heading-money { grid-column: 2; grid-row: 1; }
 .economic-grid { grid-column: 2; grid-row: 2; }
 
-.report-heading-check {
+.report-heading-categories {
   grid-column: 1 / -1;
   grid-row: 3;
   margin-top: 1.2rem !important;
@@ -637,9 +638,12 @@ body.has-results .home-layout {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.attention-list { grid-column: 1 / -1; grid-row: 4; }
+.report-money-classifications {
+  grid-column: 1 / -1;
+  grid-row: 4;
+}
 
-.report-heading-next {
+.report-heading-check {
   grid-column: 1 / -1;
   grid-row: 5;
   margin-top: 1.2rem !important;
@@ -647,7 +651,17 @@ body.has-results .home-layout {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.next-step { grid-column: 1 / -1; grid-row: 6; }
+.attention-list { grid-column: 1 / -1; grid-row: 6; }
+
+.report-heading-next {
+  grid-column: 1 / -1;
+  grid-row: 7;
+  margin-top: 1.2rem !important;
+  padding-top: 1.05rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.next-step { grid-column: 1 / -1; grid-row: 8; }
 
 .report-heading-icon {
   width: 2.5rem;
