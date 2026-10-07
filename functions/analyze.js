@@ -1,6 +1,6 @@
 const { GoogleGenAI } = require("@google/genai");
 
-const MODEL_NAME = "gemini-3.6-flash";
+const MODEL_NAMES = ["gemini-3.8-flash", "gemini-3.6-flash"];
 const MAX_FILES = 12;
 const MAX_BASE64_CHARS = 6_000_000;
 const ALLOWED_MIME_TYPES = new Set([
@@ -96,29 +96,88 @@ function parseFileParts(body) {
   return parts;
 }
 
+function getUpstreamStatus(error) {
+  const candidates = [
+    error?.status,
+    error?.statusCode,
+    error?.code,
+    error?.response?.status,
+  ];
+
+  for (const value of candidates) {
+    const parsed = Number(value);
+    if (Number.isInteger(parsed) && parsed >= 100 && parsed <= 599) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
+function publicUpstreamError(error) {
+  const status = getUpstreamStatus(error);
+  const message = String(error?.message || "").toLowerCase();
+
+  if (status === 429 || /quota|rate limit|resource exhausted/.test(message)) {
+    return {
+      statusCode: 429,
+      message: "Il servizio AI ha raggiunto un limite temporaneo. Riprova tra poco.",
+    };
+  }
+
+  if (status === 401 || status === 403 || /api key|permission|unauthor/.test(message)) {
+    return {
+      statusCode: 503,
+      message: "Il servizio AI non è disponibile per un problema di configurazione.",
+    };
+  }
+
+  if (status === 408 || status === 504 || /timeout|timed out/.test(message)) {
+    return {
+      statusCode: 504,
+      message: "L'analisi AI ha impiegato troppo tempo. Riprova tra poco.",
+    };
+  }
+
+  return {
+    statusCode: 502,
+    message: "L'analisi AI non è riuscita. Riprova tra poco.",
+  };
+}
+
 async function generateWithKeys(parts, keys, systemPrompt, clientFactory) {
   let lastError;
 
   for (const key of keys) {
-    try {
-      const ai = clientFactory(key);
-      const response = await ai.models.generateContent({
-        model: MODEL_NAME,
-        contents: [{ role: "user", parts }],
-        config: {
-          systemInstruction: systemPrompt,
-          temperature: 0,
-        },
-      });
+    const ai = clientFactory(key);
 
-      if (!response || typeof response.text !== "string" || !response.text.trim()) {
-        throw new Error("Gemini returned an empty response.");
+    for (const model of MODEL_NAMES) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: [{ role: "user", parts }],
+          config: {
+            systemInstruction: systemPrompt,
+            temperature: 0,
+          },
+        });
+
+        if (!response || typeof response.text !== "string" || !response.text.trim()) {
+          throw new Error("Gemini returned an empty response.");
+        }
+
+        return response.text;
+      } catch (error) {
+        lastError = error;
+        const status = getUpstreamStatus(error);
+        console.warn(
+          `Gemini request failed on ${model} (${status || "unknown"}); trying fallback when appropriate.`
+        );
+
+        if (status === 401 || status === 403 || status === 429) {
+          break;
+        }
       }
-
-      return response.text;
-    } catch (error) {
-      lastError = error;
-      console.warn("Gemini request failed; trying another configured key if available.");
     }
   }
 
@@ -168,17 +227,17 @@ async function analyzeRequest(event, options = {}) {
     return json(200, { result });
   } catch (error) {
     console.error("Gemini analysis failed:", error?.message || error);
-    return json(502, {
-      error:
-        "L'analisi AI non è riuscita. Riprova tra poco o usa un documento più leggibile.",
-    });
+    const publicError = publicUpstreamError(error);
+    return json(publicError.statusCode, { error: publicError.message });
   }
 }
 
 exports.handler = async (event) => analyzeRequest(event);
 exports._test = {
-  MODEL_NAME,
+  MODEL_NAMES,
   getApiKeys,
+  getUpstreamStatus,
+  publicUpstreamError,
   parseFileParts,
   analyzeRequest,
 };
