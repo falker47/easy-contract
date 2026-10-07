@@ -58,7 +58,7 @@ test("sanitizes upstream errors and never returns key suffixes or stack traces",
   assert.equal(response.statusCode, 502);
   assert.deepEqual(JSON.parse(response.body), {
     error:
-      "L'analisi AI non è riuscita. Riprova tra poco o usa un documento più leggibile.",
+      "L'analisi AI non è riuscita. Riprova tra poco.",
   });
   assert.doesNotMatch(response.body, /1111|2222|STACK|upstream/i);
 });
