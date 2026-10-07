@@ -245,6 +245,24 @@ function parseAttentionIndex(markdown) {
     return { score, cleanedMarkdown };
 }
 
+const REPORT_ICONS = Object.freeze({
+    summary: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h5"></path>',
+    money: '<path d="M18.5 6.5A7 7 0 1 0 18.5 17.5"></path><path d="M5 10h9"></path><path d="M5 14h8"></path>',
+    categories: '<path d="m12 2 9 5-9 5-9-5 9-5Z"></path><path d="m3 12 9 5 9-5"></path><path d="m3 17 9 5 9-5"></path>',
+    check: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path>',
+    next: '<circle cx="12" cy="12" r="9"></circle><path d="M8 12h8"></path><path d="m13 9 3 3-3 3"></path>'
+});
+
+function addReportIcon(target, iconKey) {
+    if (!target || !REPORT_ICONS[iconKey] || target.querySelector(':scope > .report-heading-icon')) return;
+
+    const badge = document.createElement('span');
+    badge.className = `report-heading-icon report-heading-icon-${iconKey}`;
+    badge.setAttribute('aria-hidden', 'true');
+    badge.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false">${REPORT_ICONS[iconKey]}</svg>`;
+    target.prepend(badge);
+}
+
 function enhanceRenderedReport() {
     const headings = Array.from(markdownOutput.querySelectorAll('h3'));
 
@@ -256,6 +274,7 @@ function enhanceRenderedReport() {
 
         if (title === 'sintesi' || title === 'in sintesi') {
             heading.classList.add('report-heading-summary');
+            addReportIcon(heading, 'summary');
             if (nextElement?.tagName === 'UL') {
                 nextElement.classList.add('summary-grid');
             }
@@ -263,6 +282,7 @@ function enhanceRenderedReport() {
 
         if (title === 'impatto economico') {
             heading.classList.add('report-heading-money');
+            addReportIcon(heading, 'money');
             if (nextElement?.tagName === 'UL') {
                 nextElement.classList.add('economic-grid');
 
@@ -272,6 +292,13 @@ function enhanceRenderedReport() {
 
                 if (breakdownItem) {
                     breakdownItem.classList.add('money-breakdown');
+
+                    const breakdownTitle = breakdownItem.querySelector(':scope > strong');
+                    if (breakdownTitle) {
+                        breakdownTitle.classList.add('amount-classification-title');
+                        addReportIcon(breakdownTitle, 'categories');
+                    }
+
                     const moneyGrid = breakdownItem.querySelector(':scope > ul');
                     const count = moneyGrid?.children.length || 0;
 
@@ -282,8 +309,14 @@ function enhanceRenderedReport() {
             }
         }
 
+        if (title === 'come sono classificate le somme') {
+            heading.classList.add('report-heading-categories');
+            addReportIcon(heading, 'categories');
+        }
+
         if (title === 'da verificare' || title === 'punti da verificare') {
             heading.classList.add('report-heading-check');
+            addReportIcon(heading, 'check');
             if (nextElement && ['OL', 'UL'].includes(nextElement.tagName)) {
                 nextElement.classList.add('attention-list');
             }
@@ -291,6 +324,7 @@ function enhanceRenderedReport() {
 
         if (title === 'prossimo passo') {
             heading.classList.add('report-heading-next');
+            addReportIcon(heading, 'next');
             if (nextElement?.tagName === 'P') {
                 nextElement.classList.add('next-step');
             }
