@@ -165,16 +165,23 @@ analyzeBtn.addEventListener('click', async () => {
 
         if (!response.ok) {
             let errorMessage = `Errore server (${response.status})`;
+            const responseText = await response.text();
 
-            try {
-                const errData = await response.json();
-                if (errData.error) errorMessage += `: ${errData.error}`;
-            } catch {
-                const responseText = await response.text();
-                if (responseText.includes('Task timed out')) {
-                    errorMessage += ': timeout durante l\'analisi.';
-                } else {
-                    errorMessage += `: ${responseText.substring(0, 100)}`;
+            if (responseText) {
+                try {
+                    const errData = JSON.parse(responseText);
+                    if (errData?.error) {
+                        errorMessage += `: ${errData.error}`;
+                    }
+                } catch {
+                    if (responseText.includes('Task timed out')) {
+                        errorMessage += ': timeout durante l\'analisi.';
+                    } else {
+                        const compactText = responseText.replace(/\s+/g, ' ').trim();
+                        if (compactText) {
+                            errorMessage += `: ${compactText.substring(0, 140)}`;
+                        }
+                    }
                 }
             }
 
