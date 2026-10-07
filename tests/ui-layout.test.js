@@ -33,3 +33,23 @@ test('adapts the report when top sections are materially imbalanced', () => {
   assert.match(css, /\.markdown-body\.report-stacked/);
   assert.match(css, /\.markdown-body\.report-stacked \.summary-grid[\s\S]*repeat\(3, minmax\(0, 1fr\)\)/);
 });
+
+
+test('promotes money classifications to a full-width report section', () => {
+  const script = fs.readFileSync(path.join(__dirname, '..', 'script.js'), 'utf8');
+  const css = fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8');
+
+  assert.match(script, /classificationHeading\.className = 'report-heading report-heading-categories'/);
+  assert.match(script, /'report-money-classifications'/);
+  assert.match(script, /insertAdjacentElement\('afterend', classificationHeading\)/);
+  assert.match(script, /classificationHeading\.insertAdjacentElement\('afterend', moneyGrid\)/);
+  assert.match(script, /breakdownItem\.remove\(\)/);
+  assert.match(css, /\.report-heading-categories[\s\S]*grid-column: 1 \/ -1/);
+  assert.match(css, /\.report-money-classifications[\s\S]*grid-column: 1 \/ -1/);
+});
+
+test('cache-busts redesigned assets after report hierarchy changes', () => {
+  assert.match(html, /style\.css\?v=2\.11\.1/);
+  assert.match(html, /script\.js\?v=2\.11\.1/);
+  assert.match(html, /app-version" content="2\.11\.1"/);
+});
