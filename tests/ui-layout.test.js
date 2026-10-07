@@ -1,0 +1,21 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+
+test('home implements the approved MagicPath two-column composition', () => {
+  assert.match(html, /class="home-layout"/);
+  assert.match(html, /class="trust-badge"/);
+  assert.match(html, /class="upload-card"/);
+  assert.match(html, /Capisci cosa conta/);
+  assert.match(html, /prima di firmare\./);
+});
+
+test('results expose the approved compact report shell', () => {
+  assert.match(html, /class="results-brand"/);
+  assert.match(html, /class="results-overview"/);
+  assert.match(html, /id="scoreContainer" class="score-container hidden"/);
+  assert.match(html, /id="markdownOutput" class="markdown-body"/);
+});
