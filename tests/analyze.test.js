@@ -74,8 +74,10 @@ test("returns model text on success", async () => {
       systemPrompt: "test prompt",
       clientFactory: () => ({
         models: {
-          generateContent: async ({ model }) => {
+          generateContent: async ({ model, config }) => {
             assert.equal(model, "gemini-3.8-flash");
+            assert.equal(config.thinkingConfig.thinkingLevel, "low");
+            assert.equal("temperature" in config, false);
             return { text: "ok" };
           },
         },
