@@ -80,5 +80,5 @@ This app is ready for **Streamlit Cloud**.
 ## 👤 Author
 
 **Maurizio Falconi (falker47)**
--   [Portfolio](https://falker47.github.io/Nexus-portfolio/)
+-   [Portfolio](https://falker47.github.io/)
 -   [GitHub](https://github.com/falker47)
