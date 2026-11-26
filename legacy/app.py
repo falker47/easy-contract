@@ -124,7 +124,7 @@ st.markdown("""
 current_year = datetime.now().year
 footer_html = f"""
 <div class="custom-footer">
-    <a href="https://falker47.github.io/Nexus-portfolio/" target="_blank">© {current_year} Maurizio Falconi - falker47</a>
+    <a href="https://falker47.github.io/" target="_blank">© {current_year} Maurizio Falconi - falker47</a>
 </div>
 """
 st.markdown(footer_html, unsafe_allow_html=True)
@@ -314,7 +314,7 @@ IMPORTANTE: Per le sezioni "In Breve" e "Il Consiglio", vai SEMPRE a capo dopo i
 current_year = datetime.now().year
 footer_html = f"""
 <div class="custom-footer">
-    <a href="https://falker47.github.io/Nexus-portfolio/" target="_blank">© {current_year} Maurizio Falconi - falker47</a>
+    <a href="https://falker47.github.io/" target="_blank">© {current_year} Maurizio Falconi - falker47</a>
 </div>
 """
 st.markdown(footer_html, unsafe_allow_html=True)
